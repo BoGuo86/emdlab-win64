@@ -1,0 +1,154 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration build-checksum="3136361726" file="D:\EMDLab\EMDLab0\LossAnalysis_PMSM.prj" location="D:\EMDLab\EMDLab0" name="LossAnalysis_PMSM" preferred-package-location="D:\EMDLab\EMDLab0\LossAnalysis_PMSM\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+    <param.appname>LossAnalysis_PMSM</param.appname>
+    <param.icon />
+    <param.icons />
+    <param.version>1.0</param.version>
+    <param.authnamewatermark>Ali Jamalifard</param.authnamewatermark>
+    <param.email />
+    <param.company />
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.guid />
+    <param.installpath.string>\LossAnalysis_PMSM\</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.target.install.notes />
+    <param.intermediate>${PROJECT_ROOT}\LossAnalysis_PMSM\for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}\LossAnalysis_PMSM\for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}\LossAnalysis_PMSM\for_redistribution</param.output>
+    <param.logdir>${PROJECT_ROOT}\LossAnalysis_PMSM</param.logdir>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>true</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.version />
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.target.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.logdir />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.create.log />
+      <param.log.file />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\LossAnalysis_PMSM.m</file>
+    </fileset.main>
+    <fileset.resources />
+    <fileset.package />
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}\Important_Functions\getedata.m</file>
+      <file>${PROJECT_ROOT}\Important_Functions\getij.m</file>
+      <file>${PROJECT_ROOT}\Important_Functions\getlist.m</file>
+      <file>${PROJECT_ROOT}\Important_Functions\rmspaces.m</file>
+      <file>${PROJECT_ROOT}\MACHINE_DB_SD.m</file>
+      <file>${PROJECT_ROOT}\MaterialsData\Materialc.m</file>
+      <file>${PROJECT_ROOT}\MaterialsData\Quantityc.m</file>
+      <file>${PROJECT_ROOT}\MaterialsData\ReadMDataBinary.m</file>
+      <file>${PROJECT_ROOT}\Mesh_Classes\MeshGenerator0.m</file>
+      <file>${PROJECT_ROOT}\Mesh_Classes\MinimalMesh.m</file>
+      <file>${PROJECT_ROOT}\Mesh_Classes\TMDBC.m</file>
+      <file>${PROJECT_ROOT}\Mesh_Classes\TMZPC.m</file>
+      <file>${PROJECT_ROOT}\Mesh_Classes\TTMDBC.m</file>
+      <file>${PROJECT_ROOT}\Mesh_Classes\TTMZPC.m</file>
+      <file>${PROJECT_ROOT}\MEX\ext_dpoly2d.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\ext_pmirror2.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\ext_protate2.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\ext_protate3x.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\ext_protate3y.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\ext_protate3z.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\ext_pshift2.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\ext_pshift3.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\geom_pmsm0.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\tmdbc_evalee.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\tmzpc_getExtrude.mexw64</file>
+      <file>${PROJECT_ROOT}\MEX\ttmdbc_evalfe.mexw64</file>
+      <file>${PROJECT_ROOT}\setggg.m</file>
+    </fileset.depfun>
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}\LossAnalysis_PMSM\for_testing" name="splash.png" optional="false">D:\EMDLab\EMDLab0\LossAnalysis_PMSM\for_testing\splash.png</file>
+      <file location="${PROJECT_ROOT}\LossAnalysis_PMSM\for_testing" name="LossAnalysis_PMSM.exe" optional="false">D:\EMDLab\EMDLab0\LossAnalysis_PMSM\for_testing\LossAnalysis_PMSM.exe</file>
+      <file location="${PROJECT_ROOT}\LossAnalysis_PMSM\for_testing" name="readme.txt" optional="true">D:\EMDLab\EMDLab0\LossAnalysis_PMSM\for_testing\readme.txt</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2017a</root>
+      <toolboxes>
+        <toolbox name="fixedpoint" />
+        <toolbox name="matlabcoder" />
+        <toolbox name="embeddedcoder" />
+        <toolbox name="polyspacebugfinder" />
+      </toolboxes>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+      <toolbox>
+        <embeddedcoder>
+          <enabled>true</enabled>
+        </embeddedcoder>
+      </toolbox>
+      <toolbox>
+        <polyspacebugfinder>
+          <enabled>true</enabled>
+        </polyspacebugfinder>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>6.2</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

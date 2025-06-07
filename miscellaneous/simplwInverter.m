@@ -1,0 +1,62 @@
+
+
+ts = 1e-4;
+t = 0:ts:0.08;
+Nt = length(t);
+
+vu = 5;
+vd = -5;
+
+r=1;
+
+s1 = sc_md;
+s2 = sc_md;
+s3 = sc_md;
+s4 = sc_md;
+s5 = sc_md;
+s6 = sc_md;
+
+v = zeros(4,Nt);
+
+
+for i = 1:Nt-1
+  
+
+  vtmp = vu - v(1,i);
+  r1 = s1.getR(pulseFcn(t(i)),vtmp);
+  vtmp = v(1,i) - vd;
+  r2 = s2.getR(-pulseFcn(t(i)),vtmp);
+  
+  vtmp = vu - v(2,i);
+  r3 = s3.getR(pulseFcn(t(i)+0.02/3),vtmp);
+  vtmp = v(2,i) - vd;
+  r4 = s4.getR(-pulseFcn(t(i)+0.02/3),vtmp);
+  
+  vtmp = vu - v(3,i);
+  r5 = s5.getR(pulseFcn(t(i)+2*0.02/3),vtmp);
+  vtmp = v(3,i) - vd;
+  r6 = s6.getR(-pulseFcn(t(i)+2*0.02/3),vtmp);
+  
+  A = [1/r+1/r1+1/r2,0,0,-1/r;...
+    0,1/r+1/r3+1/r4,0,-1/r;...
+    0,0,1/r+1/r5+1/r6,-1/r;...
+    1,1,1,-3];
+  
+  b = [vu/r1+vd/r2;vu/r3+vd/r4;vu/r5+vd/r6;0];
+  
+  v(:,i+1) = A\b;
+  
+end
+
+subplot(611)
+plot(t,v(1,:)-v(4,:))
+subplot(612)
+plot(t,v(2,:)-v(4,:))
+subplot(613)
+plot(t,v(3,:)-v(4,:))
+subplot(614)
+plot(t,v(1,:)-v(2,:))
+subplot(615)
+plot(t,v(2,:)-v(3,:))
+subplot(616)
+plot(t,v(3,:)-v(1,:))
