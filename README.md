@@ -12,10 +12,13 @@ you can also develop customized standalone software tailored to your application
 
 Setup Instructions (Windows 64-bit):
 1) Download the emdlab-win64.zip file.
-2) Extract the zip file and place "emdlab-win64" folder to the "C:\" directory without changing the folder name.
-3) To use EMDLAB package in your MATLAB code, add following line at the begining of your mfile:
+2) Extract the zip file and place "emdlab-win64" folder in the "C:\" directory, without changing the folder name.
+3) To use the EMDLAB package in your MATLAB code, add the following line at the beginning of your mfile:
 
 --->> addpath(genpath('C:\emdlab-win64'));
 
 How to install EMDLAB from GitHub? (Follow the video link):
 https://youtu.be/ifwybm4r2_0
+
+Preprint paper: 
+https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5327716
