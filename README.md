@@ -4,7 +4,9 @@ Electrical Machines Design Laboratory
 
 Overview:
 EMDLAB is an open-source numerical package developed in the MATLAB environment for the design
-and analysis of electrical machines, including motors, generators, transformers, and actuators.
+and analysis of electrical machines, including motors, generators, transformers, and actuators. 
+The package provides a transparent and reproducible tool for academic research and education. 
+Its open-source nature encourages collaboration and facilitates easy extension of the code, making it particularly valuable for method development and academic use.
 
 The package is organized as a library of MATLAB objects. Depending on your specific design needs, 
 you can select the appropriate modules to obtain your desired results. With EMDLAB, 
