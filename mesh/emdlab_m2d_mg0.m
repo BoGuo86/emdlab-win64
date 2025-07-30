@@ -1,5 +1,8 @@
 function MeshZone = emdlab_m2d_mg0(f, v, f1, v1, maxIteration)
 
+f1 = f;
+v1 = v;
+
 % validate the boundary
 emdlab_g2d_validateFV(f,v);
 
