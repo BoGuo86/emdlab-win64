@@ -3,6 +3,7 @@ classdef emdlab_mlib_pm_Y20 < handle & emdlab_mlib_permanentMagnet
     methods
         
         function obj = emdlab_mlib_pm_Y20()
+
             obj.ThermalConductivity.value = 1;
             obj.HeatCapacity.value = 1;
             obj.ElectricPermitivity.value = 0;
@@ -11,6 +12,7 @@ classdef emdlab_mlib_pm_Y20 < handle & emdlab_mlib_permanentMagnet
             obj.MassDensity.value = 1;
             obj.YoungModulus.value = 10;
             obj.PoissonRatio.value = 0.2;
+
         end
         
     end
