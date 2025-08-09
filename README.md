@@ -13,6 +13,7 @@ you can select the appropriate modules to obtain your desired results. With EMDL
 you can also develop customized standalone software tailored to your applications.
 
 **Setup Instructions (Windows 64-bit):**
+
 ✅ 1) Download the emdlab-win64.zip file.
 
 ✅ 2) Extract the zip file and place the "emdlab-win64" folder in the "C:\" directory, without changing the folder name.
