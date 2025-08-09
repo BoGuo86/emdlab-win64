@@ -1,4 +1,4 @@
-#EMDLAB finite element package
+# EMDLAB finite element package
 
 **Electrical Machines Design Laboratory**
 
