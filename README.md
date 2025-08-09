@@ -12,7 +12,7 @@ The package is organized as a library of MATLAB objects. Depending on your speci
 you can select the appropriate modules to obtain your desired results. With EMDLAB, 
 you can also develop customized standalone software tailored to your applications.
 
-**Setup Instructions (Windows 64-bit):**
+### Setup Instructions (Windows 64-bit):
 
 ✅ 1) Download the emdlab-win64.zip file.
 
