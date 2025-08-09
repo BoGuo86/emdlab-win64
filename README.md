@@ -20,7 +20,7 @@ you can also develop customized standalone software tailored to your application
 
 ✅ 3) To use the EMDLAB package in your MATLAB code, add the following line at the beginning of your mfile:
 
-<span style="color:blue">--->> addpath(genpath('C:\emdlab-win64'));</span>
+***--->> addpath(genpath('C:\emdlab-win64'));***
 
 **How to install EMDLAB from GitHub? (Follow the video link):**
 https://youtu.be/ifwybm4r2_0
