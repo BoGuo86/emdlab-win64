@@ -22,9 +22,6 @@ function [h]=emdlab_flib_arrow3d(x,y,z,head_frac,radii,radii2,colr,parent)
 % example #3:
 %        h = arrow3d([1 0],[0 1],[-2 3],.8,3);
 %        set(h,'facecolor',[1 0 0])
-% 
-% Written by Moshe Lindner , Bar-Ilan University, Israel.
-% July 2010 (C)
 
 if nargin==5
     radii2=radii*2;
