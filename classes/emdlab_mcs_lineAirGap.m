@@ -1,39 +1,58 @@
-classdef emdlab_mcs_lineAirGap < handle & g2d_constants & matlab.mixin.SetGet
+% moving contacts -> line air-gap
+% it used for full air-gap modeling of linear electrical machines
+% this object is for meshing of a linear band
+
+classdef emdlab_mcs_lineAirGap < handle & emdlab_g2d_constants & matlab.mixin.SetGet
     
     properties (SetAccess = private)
         
-        % mesh
-        m (1,1) mlib_tmz = mlib_tmz([],[]);
+         % mesh: triangular mesh zone
+        m (1,1);
+
         % stationary points
         sps (:,2) double;
+
         % moving points
         mps (:,2) double;
+
         % inner point distances
         spds (:,1) double;
+
         % outer point distances
         mpds (:,1) double;
+
         % minimum mesh length
         h0 (1,1) double;
+
         % stationary pivot vector
         svec (1,2) double;
+
         % moving pivot vector
         mvec (1,2) double;
+
         % unit pivot vector
         uvec (1,2) double;
+
         % unit normal vector
         nvec (1,2) double;
+
         % airgap length
         g (1,1) double;
+
     end
     properties (Dependent = true)
+
         % number of inner points
         Nsps (1,1) double;
+
         % number of outer points
         Nmps (1,1) double;
+
     end
+
     methods
         function obj = emdlab_mcs_lineAirGap(sps, mps, varargin)
-            set(obj, varargin{:});
+%             set(obj, varargin{:});
             % chekers: sps and mps must be on line
             obj.sps = sortPointsOnLineX(sps);
             obj.mps = sortPointsOnLineX(mps);
@@ -129,7 +148,7 @@ classdef emdlab_mcs_lineAirGap < handle & g2d_constants & matlab.mixin.SetGet
             if obj.g<0
                 ces = fliplr(ces);
             end
-            obj.m = mlib_mm(ces, [obj.sps;obj.mps;xp(:),yp(:)], ces3);
+            obj.m = emdlab_m2d_mm(ces, [obj.sps;obj.mps;xp(:),yp(:)], ces3);
         end
         function obj = shiftStationaryPoints(obj, value)
             obj.sps = ext_pshift2(obj.sps, value * obj.uvec);

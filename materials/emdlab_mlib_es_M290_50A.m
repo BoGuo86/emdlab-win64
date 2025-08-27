@@ -5,6 +5,16 @@ classdef emdlab_mlib_es_M290_50A < handle & emdlab_mlib_electricalSteel
         
         function obj = emdlab_mlib_es_M290_50A()
             
+            % Iron material properties (pure iron at room temperature)
+            obj.ThermalConductivity.value = 80;           % W/(m·K)
+            obj.HeatCapacity.value = 450;                 % J/(kg·K)
+            obj.ElectricPermitivity.value = 8.854e-12;    % F/m (≈ vacuum, usually ignored for conductors)
+            obj.ElectricConductivity.value = 1030000;       % S/m
+
+            obj.MassDensity.value = 7870;                 % kg/m³
+            obj.YoungModulus.value = 2.0e11;              % Pa (≈ 200 GPa)
+            obj.PoissonRatio.value = 0.29;                % dimensionless
+            
             obj.gradeName = 'M290-50A';
             
             obj.hb_curve = [0	0

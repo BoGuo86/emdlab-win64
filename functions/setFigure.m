@@ -35,9 +35,9 @@ hold all
 % quiver3(0,0,0,1,0,0, 'LineWidth', 2);
 % quiver3(0,0,0,0,1,0, 'LineWidth', 2);
 % quiver3(0,0,0,0,0,1, 'LineWidth', 2);
-arrow3d([0,1],[0,0],[0,0],0.85,0.045,0.1,'r');
-arrow3d([0,0],[0,1],[0,0],0.85,0.045,0.1,'b');
-arrow3d([0,0],[0,0],[0,1],0.85,0.045,0.1,'g');
+emdlab_flib_arrow3d([0,1],[0,0],[0,0],0.85,0.045,0.1,'r');
+emdlab_flib_arrow3d([0,0],[0,1],[0,0],0.85,0.045,0.1,'b');
+emdlab_flib_arrow3d([0,0],[0,0],[0,1],0.85,0.045,0.1,'g');
 patch('faces',[1,2;3,4;5,6],'vertices',[-1,0,0;1,0,0;0,-1,0;0,1,0;0,0,-1;0,0,1],'EdgeColor','none')
 text(cor,1.1,0,0,'X', 'color', 'r', 'fontsize', 10);
 text(cor,0,1.1,0,'Y', 'color', 'b', 'fontsize', 10);

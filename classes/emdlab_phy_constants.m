@@ -1,4 +1,3 @@
-% developer: https://ComProgExpert.com, Ali Jamali-Fard
 % physical constants
 
 classdef emdlab_phy_constants

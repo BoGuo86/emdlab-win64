@@ -4,7 +4,7 @@ classdef emdlab_solvers_ms2d_excitation < handle & matlab.mixin.SetGet
 
     properties
 
-        % type of magnetic-static excitation, (1) current, (2) % currentDensity
+        % type of magnetic-static excitation, (1) current, (2) currentDensity
         type (1,:) char;
 
         % the value of excitation

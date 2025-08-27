@@ -22,7 +22,7 @@ classdef emdlab_mcs_arcAirGap < handle & emdlab_g2d_constants & matlab.mixin.Set
         opas (:,1) double;
 
         % arc center
-        center (1,2) double = [0,0];
+        center (1,2) double;
 
         % minimum mesh length
         h0 (1,1) double;
@@ -44,13 +44,18 @@ classdef emdlab_mcs_arcAirGap < handle & emdlab_g2d_constants & matlab.mixin.Set
 
         % arc angle
         angle (1,1) double;
+
+        % moving boundary
+        movingBoundary = 'inner';
         
     end
     
     methods
         
-        function obj = emdlab_mcs_arcAirGap(ips, ops, Nlayer, varargin)
+        function obj = emdlab_mcs_arcAirGap(center, ips, ops, Nlayer, movingBoundary)
             
+            if nargin < 5, movingBoundary = 'inner'; end
+            obj.center = center;
             obj.ips = ips;
             obj.ops = ops;
             
@@ -60,12 +65,8 @@ classdef emdlab_mcs_arcAirGap < handle & emdlab_g2d_constants & matlab.mixin.Set
             obj.rin = obj.get_rin;
             obj.rout = obj.get_rout;
             
-            if nargin > 2
-                obj.Nlayer = Nlayer;
-            end
-            
-            % arc center must be set manually if they are not [0,0]
-            set(obj, varargin{:});
+            obj.Nlayer = Nlayer;
+            obj.movingBoundary = movingBoundary;            
 
             % chekers: inner points must be insode outer points
             obj.sortPoints;

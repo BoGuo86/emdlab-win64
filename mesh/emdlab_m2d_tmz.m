@@ -1,9 +1,8 @@
-% developer: https://ComProgExpert.com, Ali Jamali-Fard
 % 2D triangular mesh zone
 
 classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
     
-    properties (SetAccess = protected)
+    properties
         
         % mesh nodes
         nodes (:,2) double;
@@ -11,10 +10,10 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         % mesh connectivity list
         cl (:,3) double;
 
-        % mesh elements
+        % mesh elements: [edge1, edge2, edge3]
         elements (:,3) double;
 
-        % unique edges
+        % unique edges: [node1, node2]
         edges (:,2) double;
 
         % list of boundary edges
@@ -39,9 +38,15 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
 
         % mesh zone color
         color = 'c';
+
+        % surface color transparency
+        transparency (1,1) double = 1;
         
         % mesh zone properties: differs in differents solvers
         props (1,1) struct;
+
+        % flags
+        isMoving = false;
         
     end
     
@@ -79,7 +84,7 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
     end
     
     methods        
-        %% Constructor and Destructor
+        %% constructor and destructor
         function obj = emdlab_m2d_tmz(cl, nodes)
             if nargin < 2, error('Not enough input arguments.'); end
             if nargin > 2, error('Too many input arguments.'); end
@@ -95,13 +100,10 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         function y = get.Ne(obj)
             y = size(obj.cl, 1);
         end
-        
-        function delete(obj)
-        end
-        
-        %% FEM Preparation
+              
+        %% FEM preparation
         function evalAreaOfElements(obj)
-            if obj.is_ea_Evaluated, return; end
+%             if obj.is_ea_Evaluated, return; end
             v12 = obj.nodes(obj.cl(:, 2), :) - obj.nodes(obj.cl(:, 1), :);
             v13 = obj.nodes(obj.cl(:, 3), :) - obj.nodes(obj.cl(:, 1), :);
             obj.ea = 0.5 * (v12(:, 1) .* v13(:, 2) - v12(:, 2) .* v13(:, 1));
@@ -110,15 +112,20 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         end
         
         function evalArea(obj)
-            if obj.is_area_Evaluated, return; end
+%             if obj.is_area_Evaluated, return; end
             obj.evalAreaOfElements;
             obj.area = sum(obj.ea);
             % change states
             obj.is_area_Evaluated = true;
         end
         
-        %% Topological Functions
+        %% topological functions
         % setting needed data
+        function setdataForce(obj)
+            obj.isDataSetted = false;
+            obj.setdata;
+        end
+
         function setdata(obj)
 
             % check if already data is set
@@ -169,14 +176,13 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
 
         end
         
-        %% Mesh Visiualization
+        %% visiualization functions
         function varargout = showm(obj)
 
             f = emdlab_r2d_mesh();
             ax = axes(f);
             f.Name = ['[Mesh Zone][', 'Nn = ', num2str(obj.Nn), '][Ne = ', num2str(obj.Ne), ']'];
             
-
             patch('Faces', obj.cl(:, 1:3), 'Vertices', obj.nodes, 'FaceColor', ...
                 obj.color, 'EdgeColor', 'k', 'parent', ax);
             
@@ -298,7 +304,10 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
             
         end
         
-        % get copy of transform
+        %% tranforms and copy generations
+        function mirror(obj, mirrorAxis)
+        end
+        
         function newObj = getMirror(obj, varargin)
             newObj = copy(obj);
             newObj.nodes = ext_pmirror2(newObj.nodes, varargin{:});
@@ -322,11 +331,19 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         end
         
         function rotate(obj, varargin)
-            obj.nodes = ext_protate2(obj.nodes, varargin{:});
+            if numel(varargin) == 1
+                obj.nodes = ext_protate2(obj.nodes, varargin{:});
+            else
+                if length(varargin{2}) == 2
+                    obj.nodes = ext_protate2(obj.nodes, varargin{:});
+                else
+                    obj.nodes = emdlab_g2d_rotatePoints(obj.nodes, varargin{:});
+                end
+            end
         end
         
         function evalQ(obj)
-            if obj.is_Q_Evaluated, return; end
+%             if obj.is_Q_Evaluated, return; end
             obj.Q = sparse(double(obj.cl'), repmat(1:obj.Ne, 3, 1), ones(1, 3 * obj.Ne), ...
                 obj.Nn, obj.Ne) * obj.ea;
             obj.Q = obj.Q' / 3 / obj.area;
@@ -335,7 +352,7 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         end
         
         function evalWm(obj)
-            if obj.is_Wm_Evaluated, return; end
+%             if obj.is_Wm_Evaluated, return; end
             obj.Wm = sparse(double(obj.cl(:)), repmat((1:obj.Ne)', 3, 1), 1);
             % change states
             obj.is_Wm_Evaluated = true;

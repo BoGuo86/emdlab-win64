@@ -50,9 +50,9 @@ ca.Units = 'pixels';
 ca.Position = [20,20,100,100];
 axis(ca, 'off', 'vis3d')
 ca.NextPlot = 'add';
-arrow3d([0,1],[0,0],[0,0],0.85,0.045,0.1,'r',ca);
-arrow3d([0,0],[0,1],[0,0],0.85,0.045,0.1,'b',ca);
-arrow3d([0,0],[0,0],[0,1],0.85,0.045,0.1,'g',ca);
+emdlab_flib_arrow3d([0,1],[0,0],[0,0],0.85,0.045,0.1,'r',ca);
+emdlab_flib_arrow3d([0,0],[0,1],[0,0],0.85,0.045,0.1,'b',ca);
+emdlab_flib_arrow3d([0,0],[0,0],[0,1],0.85,0.045,0.1,'g',ca);
 patch(ca,'faces',[1,2;3,4;5,6],'vertices',[-1,0,0;1,0,0;0,-1,0;0,1,0;0,0,-1;0,0,1],'EdgeColor','none')
 text(ca,1.1,0,0,'X', 'color', 'r', 'fontsize', 10);
 text(ca,0,1.1,0,'Y', 'color', 'b', 'fontsize', 10);

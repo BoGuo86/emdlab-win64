@@ -29,6 +29,7 @@ ca.Units = 'pixels';
 ca.Position = [20,20,100,100];
 axis(ca, 'off', 'vis3d')
 ca.NextPlot = 'add';
+set(ca,'handlevisibility','off');
 % arrow3d([0,1],[0,0],[0,0],0.85,0.045,0.1,'r',ca);
 % arrow3d([0,0],[0,1],[0,0],0.85,0.045,0.1,'b',ca);
 % arrow3d([0,0],[0,0],[0,1],0.85,0.045,0.1,'g',ca);

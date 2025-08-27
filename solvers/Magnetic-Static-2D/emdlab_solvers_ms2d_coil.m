@@ -1,54 +1,61 @@
-% developer: https://ComProgExpert.com
-% 2d magnetic-static coil
+% two-dimensional magnetic-static coil
+% coil is made of a series of coil arms: there is no parallel branches
 
 classdef emdlab_solvers_ms2d_coil < handle & matlab.mixin.SetGet
 
     properties
-        
-        turns (1,1) double {mustBePositive} = 1;
-        direction (1,:) char = 'positive';
-        parentMatrix (1,:) char = '';
-        
+
+        % the number of coil turns
+        coilArms (1,:) string;
+
+        % coil index
+        ci (1,1) double;
+
+        % coil arm directions: '+1' -> z+, or '-1' -> z-
+        directions (1,:) double;
+
+        % current
+        current (1,:) double = 0;
+
+        % flux linkage
+        fluxLinkage (1,:) double = 0;
+
+        % dc resistance of the coil
+        Rdc (1,1) double;      
+
+        % length of the end winding
+        Lend (1,1) double {mustBeNonnegative} = 0;
+
     end
 
     properties (Dependent = true)
-        
-        sign (1,1) double;
-        
+
+        % number of coil arms
+        NcoilArms (1,1) double;
+
     end
 
     methods
 
-        function obj = emdlab_solvers_ms2d_coil(varargin)
-            set(obj, varargin{:});
+        function obj = emdlab_solvers_ms2d_coil()
+        end   
+
+        function addCoilArm(obj, newCoilArmName, direction)
+            obj.coilArms(end+1) = newCoilArmName;
+            obj.directions(end+1) = direction;
         end
 
-        function set.turns(obj, value)
-            obj.turns = value;
+        function y = get.NcoilArms(obj)
+            y = numel(obj.coilArms);
         end
 
-        function set.direction(obj, value)
-            value = strrep(value, ' ', '');
-
-            if ismember(lower(value), {'positive', 'negative'})
-                obj.direction = value;
+        function setCurrent(obj, value)
+            if (isscalar(value) && isnumeric(value))
+                obj.current = value;
             else
-                error('Coil direction must be "positive" or "negative".');
+                error('Coil current must be a scalar numeric value.');
             end
-
-        end
-
-        function y = get.sign(obj)
-
-            switch obj.direction
-                case 'positive'
-                    y = 1;
-                case 'negative'
-                    y = -1;
-            end
-
         end
 
     end
-
 end

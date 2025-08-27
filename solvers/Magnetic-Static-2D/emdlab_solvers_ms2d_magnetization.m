@@ -1,5 +1,4 @@
-% developer: https://ComProgExpert.com, Ali Jamali-Fard
-% magnetization object for 2D magnetic static problems
+% magnetization object for 2D magnetic-static problems
 
 classdef emdlab_solvers_ms2d_magnetization < handle & matlab.mixin.Copyable
 
@@ -63,11 +62,14 @@ classdef emdlab_solvers_ms2d_magnetization < handle & matlab.mixin.Copyable
                     case '-r'
                         obj.magDir = @(x,y) -[x,y]/norm([x,y]);
 
-                    case 'theta'
+                    case 't'
                         obj.magDir = @(x,y) [y,-x]/norm([x,y]);
 
+                    case '-t'
+                        obj.magDir = @(x,y) [-y,x]/norm([x,y]);
+
                     otherwise
-                        error('magDir must be <x>, <y>, <r> or <theta>')
+                        error('magDir must be <x>, <y>, <r> or <t>');
 
                 end
 
@@ -97,7 +99,7 @@ classdef emdlab_solvers_ms2d_magnetization < handle & matlab.mixin.Copyable
 
             if isa(obj.magDir,'double')
 
-                y = repmat(obj.Hc * obj.magDir / norm(obj.magDir), size(p,1), 1);
+                y = repmat(-obj.Hc * obj.magDir / norm(obj.magDir), size(p,1), 1);
 
             elseif isa(obj.magDir,'function_handle')
 
@@ -106,7 +108,7 @@ classdef emdlab_solvers_ms2d_magnetization < handle & matlab.mixin.Copyable
                     y(i,:) = feval(obj.magDir,p(i,1),p(i,2));
                 end
 
-                y = y * obj.Hc;
+                y = -y * obj.Hc;
 
             end
 

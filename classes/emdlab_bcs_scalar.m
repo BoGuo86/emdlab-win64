@@ -38,26 +38,37 @@ classdef emdlab_bcs_scalar < handle
 
         % dirichlet index
         iD(:, 1) double;
+
         % dirichlet value
         vD(:, 1) double;
+
         % odd periodic master index
         mOP(:, 1) double;
+
         % odd periodic slave index
         sOP(:, 1) double;
+
         % even periodic master index
         mEP(:, 1) double;
+
         % even periodic slave index
         sEP(:, 1) double;
+
         % index of robin edges
         iR double;
+
         % a value of robin edges
         aR(:, 1) double;
+
         % b value of robin edges
         bR(:, 1) double;
+
         % index of neumann edges
         iN double;
+
         % b value of robin edges
         bN(:, 1) double;
+
         % element type
         eType(1, :) char;
 
@@ -68,12 +79,16 @@ classdef emdlab_bcs_scalar < handle
 
         % number of diriclet nodes
         Ndbcs(1, 1) double;
+
         % number of odd periodic nodes
         Nopbcs(1, 1) double;
+
         % number of even periodic nodes
         Nepbcs(1, 1) double;
+
         % number of neumann edges or facets
         Nnbcs(1, 1) double;
+        
         % number of robin edges or facets
         Nrbcs(1, 1) double;
         
