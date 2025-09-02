@@ -1282,7 +1282,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             cb.FontName = 'Verdana';
             cb.FontSize = 12;
             cb.Label.String = 'Flux Density [tesla]';
-            clim([0,1.9]);
 
             % evaluation of contour lines
             if obj.m.isTL3

@@ -106,6 +106,11 @@ classdef emdlab_solvers_ms2d_magnetization < handle & matlab.mixin.Copyable
                 y = zeros(size(p,1),2);
                 for i = 1:size(p,1)
                     y(i,:) = feval(obj.magDir,p(i,1),p(i,2));
+                    if any(isnan(y(i,:)))
+                        y(i,:) = [0,0];
+                    else
+                        y(i,:) = y(i,:)/norm(y(i,:));
+                    end
                 end
 
                 y = -y * obj.Hc;
