@@ -28,10 +28,13 @@ classdef emdlab_g2d_db < handle
 
             % set python path
             fid = fopen('c:geometry\pyPath.txt', 'r');
-            if fid<0, warning('can not set python path.'); end
-            obj.pyPath = string(fscanf(fid, '%s'));
-            obj.pyPath = replace(obj.pyPath, '\', '\\');
-            fclose(fid);
+            if fid<0
+                warning('Cannot set Python path. The file <pyPath.txt> does not exist.');
+            else
+                obj.pyPath = string(fgetl(fid));
+                obj.pyPath = replace(obj.pyPath, '\', '\\');
+                fclose(fid);
+            end
 
         end
 
