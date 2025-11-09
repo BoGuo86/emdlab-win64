@@ -29,6 +29,7 @@ https://youtu.be/ifwybm4r2_0
 https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5327716
 
 ### How to use Gmsh as a mesh generator in EMDLAB:
+In addition to the built-in EMDLAB mesh generators, it is also possible to use Gmsh as an external mesh generator.
 
 ✅ 1) Install Python.
 
