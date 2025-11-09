@@ -17,11 +17,22 @@ classdef emdlab_g2d_db < handle
         % faces
         faces (1,:) emdlab_g2d_face;
 
+        % python path
+        pyPath = "";
+
     end
 
     methods
         %% constructor and destructor
         function obj = emdlab_g2d_db()
+
+            % set python path
+            fid = fopen('c:geometry\pyPath.txt', 'r');
+            if fid<0, warning('can not set python path.'); end
+            obj.pyPath = string(fscanf(fid, '%s'));
+            obj.pyPath = replace(obj.pyPath, '\', '\\');
+            fclose(fid);
+
         end
 
         %% point methods
@@ -1397,11 +1408,10 @@ classdef emdlab_g2d_db < handle
 
         function m = read_msh_file(obj)
 
-            % run gmsh via matlab
-            pyPath = "C:\\Users\\Remote Server 3\\AppData\\Local\\Programs\\Python\\Python310\\python.exe";
+            % run gmsh via matlab            
             pyCodePath = "C:\\emdlab-win64\\py-files\\gmsh\\emdlab_gmsh_runGeoSaveMsh2D.py";
 
-            [~,~] = system(char('"' + pyPath + '"' + " " + '"' + pyCodePath+ '"'));
+            [~,~] = system(char('"' + obj.pyPath + '"' + " " + '"' + pyCodePath+ '"'));
 
             % read generated mesh;
             emdlab_gmsh_mshFile;
@@ -1448,11 +1458,10 @@ classdef emdlab_g2d_db < handle
             fprintf(fid, 'Coherence;\n');
             fclose(fid);
 
-            % run gmsh via matlab
-            pyPath = "C:\\Users\\Remote Server 3\\AppData\\Local\\Programs\\Python\\Python310\\python.exe";
+            % run gmsh via matlab            
             pyCodePath = "C:\\emdlab-win64\\py-files\\emdlab_gmsh_runGeoSaveStep.py";
 
-            [~,~] = system(char('"' + pyPath + '"' + " " + '"' + pyCodePath+ '"'));
+            [~,~] = system(char('"' + obj.pyPath + '"' + " " + '"' + pyCodePath+ '"'));
 
             stpPath = "C:\emdlab-win64\geometry\step\emdlab_g3d_stepFile.step";
             copyfile(stpPath, cd + "\" + string(faceName) + ".step")

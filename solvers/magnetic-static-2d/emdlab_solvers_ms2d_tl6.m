@@ -1,7 +1,7 @@
 % magnetic-static two-dimensional tl3
-% triangular lagrangian elements common properties
+% triangular lagrangian elements: 6 points per element
 
-classdef emdlab_solvers_ms2d_tlcp < handle
+classdef emdlab_solvers_ms2d_tl6 < handle
 
     properties (SetAccess = protected)
 
@@ -28,7 +28,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
     properties (SetAccess = protected)
 
         % depth of problem
-        depth (1,1) double {mustBePositive} = 1;
+        depth (1,1) double;
 
         % units
         units (1,1) emdlab_phy_units;
@@ -40,7 +40,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
         solverSettings (1,1) struct
         solverHistory (1,1) struct
         monitorResiduals (1,1) logical = false;
-        solverIndex = 1;
 
         % states
         isBeEvaluated (1,1) logical = false;
@@ -62,17 +61,21 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
     methods
         %% constructor and destructor
-        function obj = emdlab_solvers_ms2d_tlcp()
-            % default values
+        function obj = emdlab_solvers_ms2d_tl6()
+
+            % default valuess
             obj.depth = 1;
             obj.bcs = emdlab_bcs_scalarNodes('TL3');
             obj.units = emdlab_phy_units;
+
         end
 
         function delete(obj)
+
             delete(obj.m);
             delete(obj.bcs);
             delete(obj.units);
+
         end
 
         function setLengthUnit(obj, unitValue)
@@ -84,11 +87,9 @@ classdef emdlab_solvers_ms2d_tlcp < handle
         end
 
         function setDepth(obj, value)
-            obj.depth = value;
-        end
 
-        function setSolverIndex(obj, value)
-            obj.solverIndex = value;
+            obj.depth = value;
+
         end
 
         function y = get.NcoilArms(obj)
@@ -100,7 +101,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
         end
 
         %% solver properties for mesh zones
-        % set default properties of a mesh zone
         function setdp(obj, mzName)
 
             obj.m.mzs.(mzName).props.isExcited = false;
@@ -138,7 +138,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
         end
 
         %% excitations definitions
-        % returns coil name if coil exist otherwise it will raise an error
+        % define a new coil
         function coilName = checkCoilExistence(obj, coilName)
 
             if ~isfield(obj.coils, coilName)
@@ -147,7 +147,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % returns coil name if coil does not exist otherwise it will raise an error
         function coilName = checkCoilNonExistence(obj, coilName)
 
             if isfield(obj.coils, coilName)
@@ -156,7 +155,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % define a new coil
         function defineCoil(obj, coilName)
 
             coilName = obj.checkCoilNonExistence(coilName);
@@ -207,7 +205,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % check if all defined coils have coil arms, and also calculates Rdc
+        % check if all defined coils have coil arms
         function checkCoils(obj)
 
             % coils with zeros number of coil arms
@@ -222,14 +220,12 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % setting coil current
         function setCoilCurrent(obj, coilName, value)
             coilName = obj.checkCoilExistence(coilName);
             obj.coils.(coilName).setCurrent(value);
             obj.makeFalse_isElementDataAssigned;
         end
 
-        % definition of excitation that can be current or current density
         function setExcitation(obj, mzName, varargin)
 
             mzName = obj.m.checkMeshZoneExistence(mzName);
@@ -245,8 +241,8 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % this function set the magnetization property of a mesh zone
         function setMagnetization(obj, mzName, varargin)
+
             mzName = obj.m.checkMeshZoneExistence(mzName);
 
             if nargin == 3 && isa(varargin{1}, 'emdlab_solvers_ms2d_magnetization')
@@ -256,32 +252,18 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             end
 
             obj.m.mzs.(mzName).props.isMagnetized = true;
+
             % change states
             obj.makeFalse_isElementDataAssigned;
+
         end
 
         %% visualization functions
-        % show a single coils
-        function varargout = showCoil(obj, coilName, varargin)
-
-            switch numel(varargin)
-                case 0
-                    f = figure;
-                    ax = axes(f);
-                    f.Name = 'Coil arm';
-
-                case 1
-
-                    if isa(varargin{1}, 'matlab.graphics.axis.Axes')
-                        ax = varargin{1};
-                        f = ax.Parent;
-                    end
-
-                otherwise
-                    error('Too many input arguments');
-            end
+        function varargout = showCoil(obj, coilName)
 
             coilName = obj.checkCoilExistence(coilName);
+            f = emdlab_r2d_mesh;
+            ax = axes(f);
             cptr = obj.coils.(coilName);
 
             for i = 1:cptr.NcoilArms
@@ -305,6 +287,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             axis(ax, 'off');
             axis(ax, 'equal');
             set(ax, 'clipping', 'off');
+            set(f, 'Visible', 'on');
 
             if nargout == 1
                 varargout{1} = f;
@@ -314,26 +297,10 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % show all coil arms
-        function varargout = showAllCoilArms(obj, varargin)
+        function varargout = showAllCoilArms(obj)
 
-            switch numel(varargin)
-                case 0
-                    f = figure;
-                    ax = axes(f);
-                    f.Name = 'All defined coil arms';
-
-                case 1
-
-                    if isa(varargin{1}, 'matlab.graphics.axis.Axes')
-                        ax = varargin{1};
-                        f = ax.Parent;
-                    end
-
-                otherwise
-                    error('Too many input arguments');
-            end
-
+            f = emdlab_r2d_mesh;
+            ax = axes(f);
             mzNames = fieldnames(obj.m.mzs);
 
             for i = 1:numel(mzNames)
@@ -354,6 +321,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             axis(ax, 'off');
             axis(ax, 'equal');
             set(ax, 'clipping', 'off');
+            set(f, 'Visible', 'on');
 
             if nargout == 1
                 varargout{1} = f;
@@ -380,10 +348,8 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             obj.bcs.setEvenPeriodic(varargin{:});
         end
 
-        %% post-proccessing: field quantities calculations
+        %% post-proccessing: evaluations
         function clearAllResults(obj)
-
-            % result names
             rNames = fieldnames(obj.results);
 
             for i = 1:numel(rNames)
@@ -391,53 +357,20 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             end
 
             obj.isResultsValid = false;
-
         end
 
-        % Evaluation of B [tesla] on gaussian and mesh points of each element
         function evalBe(obj)
 
-            if obj.m.isTL3
-
-                % 1 gaussian point -> (1/3,1/3)
-                % 3 mesh points at corners
-                [obj.results.Bxg, obj.results.Byg, obj.results.Bxn, obj.results.Byn] = ...
-                    emdlab_m2d_tl3_evalB(obj.m.cl, obj.results.A, obj.m.JIT);
-                obj.results.Bxg = obj.results.Bxg * (obj.units.k_magneticVectorPotential / obj.units.k_length);
-                obj.results.Byg = obj.results.Byg * (obj.units.k_magneticVectorPotential / obj.units.k_length);
-                obj.results.Bxn = obj.results.Bxn * (obj.units.k_magneticVectorPotential / obj.units.k_length);
-                obj.results.Byn = obj.results.Byn * (obj.units.k_magneticVectorPotential / obj.units.k_length);
-
-            elseif obj.m.isTL6
-
-                % Evaluation of B on gaussian points
-                [obj.results.Bxg, obj.results.Byg, obj.results.Bxn, obj.results.Byn] = ...
-                    emdlab_m2d_tl6_evalB(obj.m.cl, obj.results.A, obj.m.JIT);
-                obj.results.Bxg = obj.results.Bxg * (obj.units.k_magneticVectorPotential / obj.units.k_length);
-                obj.results.Byg = obj.results.Byg * (obj.units.k_magneticVectorPotential / obj.units.k_length);
-                obj.results.Bxn = obj.results.Bxn * (obj.units.k_magneticVectorPotential / obj.units.k_length);
-                obj.results.Byn = obj.results.Byn * (obj.units.k_magneticVectorPotential / obj.units.k_length);
-
-            else
-                error('Wrong element type');
-            end
-
-            obj.isBeEvaluated = true;
+            % Evaluation of B on gaussian points
+            [obj.results.Bxg, obj.results.Byg, obj.results.Bxn, obj.results.Byn] = ...
+                emdlab_m2d_tl6_evalB(obj.m.cl, obj.results.A, obj.m.JIT);
+            obj.results.Bxg = obj.results.Bxg * (obj.units.k_magneticVectorPotential / obj.units.k_length);
+            obj.results.Byg = obj.results.Byg * (obj.units.k_magneticVectorPotential / obj.units.k_length);
+            obj.results.Bxn = obj.results.Bxn * (obj.units.k_magneticVectorPotential / obj.units.k_length);
+            obj.results.Byn = obj.results.Byn * (obj.units.k_magneticVectorPotential / obj.units.k_length);
 
         end
 
-        % Evaluation of H [A/m] on gaussian and mesh points of each element
-        function evalHe(obj)
-
-            obj.results.Hxg = obj.edata.MagneticReluctivity .* obj.results.Bxg - obj.edata.MagnetizationX;
-            obj.results.Hyg = obj.edata.MagneticReluctivity .* obj.results.Byg - obj.edata.MagnetizationY;
-
-            obj.results.Hxn = obj.edata.MagneticReluctivity .* obj.results.Bxn - obj.edata.MagnetizationX;
-            obj.results.Hyn = obj.edata.MagneticReluctivity .* obj.results.Byn - obj.edata.MagnetizationY;
-
-        end
-
-        % evaluate smoothed B on mesh points
         function evalBn(obj)
 
             obj.evalBe;
@@ -451,19 +384,8 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                 mzptr = obj.m.mzs.(mzsNames{i});
                 eziptr = obj.m.ezi(:,mzptr.zi);
 
-                if obj.m.isTL3
-
-                    [obj.results.BxnSmooth(:,eziptr), obj.results.BynSmooth(:,eziptr)] = ...
-                        emdlab_m2d_tl3_evalBnSmooth(obj.m.cl(eziptr,:), obj.results.Bxn(:,eziptr), obj.results.Byn(:,eziptr), obj.m.gea(eziptr), obj.m.Nn);
-
-                elseif obj.m.isTL6
-
-                    [obj.results.BxnSmooth(:,eziptr), obj.results.BynSmooth(:,eziptr)] = ...
-                        emdlab_m2d_tl6_evalBnSmooth(obj.m.cl(eziptr,:), obj.results.Bxn(:,eziptr), obj.results.Byn(:,eziptr), obj.m.gea(eziptr), obj.m.Nn);
-
-                else
-                    error('Wrong element type');
-                end
+                [obj.results.BxnSmooth(:,eziptr), obj.results.BynSmooth(:,eziptr)] = ...
+                    emdlab_m2d_tl6_evalBnSmooth(obj.m.cl(eziptr,:), obj.results.Bxn(:,eziptr), obj.results.Byn(:,eziptr), obj.m.gea(eziptr), obj.m.Nn);
 
             end
 
@@ -471,78 +393,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % evaluate smoothed H on mesh points
-        function evalHn(obj)
-
-            obj.evalHe;
-
-            mzsNames = fieldnames(obj.m.mzs);
-            obj.results.HxnSmooth = zeros(3,obj.m.Ne);
-            obj.results.HynSmooth = zeros(3,obj.m.Ne);
-
-            for i = 1:numel(mzsNames)
-
-                mzptr = obj.m.mzs.(mzsNames{i});
-                eziptr = obj.m.ezi(:,mzptr.zi);
-
-                if obj.m.isTL3
-
-                    [obj.results.HxnSmooth(:,eziptr), obj.results.HynSmooth(:,eziptr)] = ...
-                        emdlab_m2d_tl3_evalBnSmooth(obj.m.cl(eziptr,:), obj.results.Hxn(:,eziptr), obj.results.Hyn(:,eziptr), obj.m.gea(eziptr), obj.m.Nn);
-
-                elseif obj.m.isTL6
-
-                    [obj.results.HxnSmooth(:,eziptr), obj.results.HynSmooth(:,eziptr)] = ...
-                        emdlab_m2d_tl6_evalBnSmooth(obj.m.cl(eziptr,:), obj.results.Hxn(:,eziptr), obj.results.Hyn(:,eziptr), obj.m.gea(eziptr), obj.m.Nn);
-
-                else
-                    error('Wrong element type');
-                end
-
-
-            end
-
-        end
-
-        %% post-proccessing: energy calculations
-        % calculate total stored energy and co-energy
-        function [ye, yc] = evalTotalEnergyCoenergyTL3(obj)
-
-            mzsNames = fieldnames(obj.m.mzs);
-            Bk2 = obj.results.Bxg.^2 + obj.results.Byg.^2;
-            ye = 0;
-            yc = 0;
-
-            for i = 1:numel(mzsNames)
-
-                mzptr = obj.m.mzs.(mzsNames{i});
-                mptr = obj.m.mts.(mzptr.material);
-                eziptr = obj.m.ezi(:,mzptr.zi);
-
-                if mptr.MagneticPermeability.isLinear
-
-                    % mesh zone energy
-                    mze = 0.5*obj.edata.MagneticReluctivity(eziptr) * (mzptr.getAreaOfElements .* Bk2(eziptr)');
-                    ye = ye + mze;
-                    yc = yc + mze;
-
-                else
-
-                    % mesh zone energy
-                    mze = mzptr.getAreaOfElements' * interp1(mptr.be, mptr.we, sqrt(Bk2(eziptr)'));
-                    ye = ye + mze;
-                    yc = yc + obj.edata.MagneticReluctivity(eziptr) * (mzptr.getAreaOfElements .* Bk2(eziptr)') - mze;
-
-                end
-
-            end
-
-            ye = ye*obj.getDepth*obj.units.k_length^2;
-            yc = yc*obj.getDepth*obj.units.k_length^2;
-
-        end
-
-        function [ye, yc] = evalTotalEnergyCoenergyTL6(obj)
+        function [ye, yc] = evalTotalEnergyCoenergy(obj)
 
             mzsNames = fieldnames(obj.m.mzs);
             Bk2 = obj.results.Bxg.^2 + obj.results.Byg.^2;
@@ -580,46 +431,13 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        function [ye, yc] = evalTotalEnergyCoenergy(obj)
-
-            if obj.m.isTL3
-                [ye, yc] = obj.evalTotalEnergyCoenergyTL3;
-            elseif obj.m.isTL6
-                [ye, yc] = obj.evalTotalEnergyCoenergyTL6;
-            else
-                error('Wrong element type');
-            end
-
-        end
-
-        %% post-proccessing: flux linkage and inductance matrix calculations
-        % calculate mesh zone flux linkage
-        function y = evalMeshZoneFluxLinkageTL3(obj, mzName)
-
-            mzName = obj.m.checkMeshZoneExistence(mzName);
-            y = obj.m.mzs.(mzName).getQ * obj.results.A(obj.m.mzs.(mzName).l2g) * obj.getDepth;
-
-        end
-
-        function y = evalMeshZoneFluxLinkageTL6(obj, mzName)
+        function y = evalMeshZoneFluxLinkage(obj, mzName)
 
             mzName = obj.m.checkMeshZoneExistence(mzName);
             mzptr = obj.m.mzs.(mzName);
             eziptr = obj.m.ezi(:,mzptr.zi);
 
             y = obj.m.gea(eziptr) * sum(obj.results.A(obj.m.cl(eziptr,4:6)),2) * (obj.getDepth/3) / mzptr.getArea;
-
-        end
-
-        function y = evalMeshZoneFluxLinkage(obj, mzName)
-
-            if obj.m.isTL3
-                y = obj.evalMeshZoneFluxLinkageTL3(mzName);
-            elseif obj.m.isTL6
-                y = obj.evalMeshZoneFluxLinkageTL6(mzName);
-            else
-                error('Wrong element type');
-            end
 
         end
 
@@ -642,21 +460,16 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        %% post-proccessing: torque and force calculations
-        % torque evaluation using maxwell stress tensor
         function y = evalTorqueByMST(obj, xc, yc, r, N)
 
             if nargin < 5
                 N = 10001;
             end
             [br, bt, t] = obj.getBrBtOnCircle(xc, yc, r, N);
-            br(isnan(br)) = 0;
-            bt(isnan(bt)) = 0;
             y = trapz(t, br.*bt) * r^2 * obj.units.k_length^2 * obj.getDepth / (4 * pi * 1e-7);
 
         end
 
-        % torque evaluation using maxwell stress tensor on 3 layers
         function y = evalTorqueByMST3(obj, xc, yc, r, gap, N)
 
             if nargin < 6, N = 10001; end
@@ -664,109 +477,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % torque evaluation using surface MST on a number of selected objects
-        function torque = evalTorqueBySurfaceMSTTL3(obj, xc, yc, varargin)
-
-            % get names string list
-            mzNames = emdlab_flib_varargin2StringList(varargin{:});
-
-            % index of selected zones
-            zi = zeros(1,numel(mzNames));
-
-            % check mesh zone existance
-            for i = 1:numel(mzNames)
-                mzNames(i) = obj.m.checkMeshZoneExistence(mzNames(i));
-                zi(i) = obj.m.mzs.(mzNames(i)).zi;
-            end
-
-            % find boundary edges of mesh zone exposing to air
-            eIndices = ismember(obj.m.edges(:, 3),zi) & (~ismember(obj.m.edges(:, 4),zi));
-            eIndices = eIndices | (ismember(obj.m.edges(:, 4),zi) & (~ismember(obj.m.edges(:, 3),zi)));
-            eIndices = eIndices & (~ obj.m.bedges);
-            eIndices = find(eIndices);
-
-            torque = 0;
-            for eIndex = eIndices'
-
-                p1Index = obj.m.edges(eIndex,1);
-                p2Index = obj.m.edges(eIndex,2);
-
-                r1 = obj.m.nodes(p1Index,:) - xc;
-                r2 = obj.m.nodes(p2Index,:) - yc;
-
-                % finding normal vector
-                n = r2 - r1;
-                el = norm(n); % edge length
-                n = n/el;
-
-                if ismember(obj.m.edges(eIndex, 3),zi)
-                    n = ext_protate2(n, -pi/2);
-                    elIndex = obj.m.edges(eIndex, 7);
-                elseif ismember(obj.m.edges(eIndex, 4),zi)
-                    n = ext_protate2(n, pi/2);
-                    elIndex = obj.m.edges(eIndex, 5);
-                else
-                    error('Internal error.');
-                end
-
-                index1 = find(p1Index == obj.m.cl(elIndex,:));
-                index2 = find(p2Index == obj.m.cl(elIndex,:));
-
-                mu0 = 4*pi*1e-7;
-
-                Bx1 = obj.results.BxnSmooth(index1, elIndex);
-                By1 = obj.results.BynSmooth(index1, elIndex);
-
-                Bx2 = obj.results.BxnSmooth(index2, elIndex);
-                By2 = obj.results.BynSmooth(index2, elIndex);
-
-                Txx = (0.5/mu0) * (Bx1^2 - By1^2);
-                Txy_yx = (1/mu0) * (Bx1 * By1);
-                Tyy = (0.5/mu0) * (By1^2 - Bx1^2);
-
-                Fx1 = (Txx * n(1) + Txy_yx * n(2)) * el;
-                Fy1 = (Txy_yx * n(1) + Tyy * n(2)) * el;
-
-                Txx = (0.5/mu0) * (Bx2^2 - By2^2);
-                Txy_yx = (1/mu0) * (Bx2 * By2);
-                Tyy = (0.5/mu0) * (By2^2 - Bx2^2);
-
-                Fx2 = (Txx * n(1) + Txy_yx * n(2)) * el;
-                Fy2 = (Txy_yx * n(1) + Tyy * n(2)) * el;
-
-                r21 = r2 - r1;
-                F21 = [Fx2, Fy2] - [Fx1, Fy1];
-
-                a = r1(1) * Fy1 - r1(2) * Fx1;
-                b = r1(1) * F21(2) - r1(2) * F21(1) + r21(1) * Fy1 - r21(2) * Fx1;
-                c = r21(1) * F21(2) - r21(2) * F21(1);
-
-                torque = torque + a + b/2 + c/3;
-
-                %                 Bx = obj.results.Bxg(elIndex);
-                %                 By = obj.results.Byg(elIndex);
-                %
-                %                 mu0 = 4*pi*1e-7;
-                %                 Txx = (0.5/mu0) * (Bx^2 - By^2);
-                %                 Txy_yx = (1/mu0) * (Bx * By);
-                %                 Tyy = (0.5/mu0) * (By^2 - Bx^2);
-                %
-                %                 Fx = (Txx * n(1) + Txy_yx * n(2)) * el;
-                %                 Fy = (Txy_yx * n(1) + Tyy * n(2)) * el;
-                %
-                %                 a = r1(1) * Fy - r1(2) * Fx;
-                %                 r = r2 - r1;
-                %                 b = r(1) * Fy - r(2) * Fx;
-                %
-                %                 torque = torque + a + b/2;
-
-            end
-
-            torque = torque * obj.getDepth * obj.units.k_length^2;
-
-        end
-
-        function torque = evalTorqueBySurfaceMSTTL6(obj, xc, yc, varargin)
+        function torque = evalTorqueBySurfaceMST(obj, varargin)
 
             % get names string list
             mzNames = emdlab_flib_varargin2StringList(varargin{:});
@@ -792,8 +503,8 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                 p1Index = obj.m.edges(eIndex,1);
                 p2Index = obj.m.edges(eIndex,2);
 
-                r1 = obj.m.nodes(p1Index,:) - xc;
-                r2 = obj.m.nodes(p2Index,:) - yc;
+                r1 = obj.m.nodes(p1Index,:);
+                r2 = obj.m.nodes(p2Index,:);
 
                 % finding normal vector
                 n = r2 - r1;
@@ -850,19 +561,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        function torque = evalTorqueBySurfaceMST(obj, xc, yc, varargin)
-
-            if obj.m.isTL3
-                torque = obj.evalTorqueBySurfaceMSTTL3(xc, yc, varargin{:});
-            elseif obj.m.isTL6
-                torque = obj.evalTorqueBySurfaceMSTTL6(xc, yc, varargin{:});
-            else
-                error('Wrong element type');
-            end
-
-        end
-
-        function [x,y,Fx,Fy] = evalSurfaceForceDensityMST(obj, varargin)
+        function torque = evalTorqueBySurfaceMST3(obj, varargin)
 
             % get names string list
             mzNames = emdlab_flib_varargin2StringList(varargin{:});
@@ -881,25 +580,20 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             eIndices = eIndices | (ismember(obj.m.edges(:, 4),zi) & (~ismember(obj.m.edges(:, 3),zi)));
             eIndices = eIndices & (~ obj.m.bedges);
             eIndices = find(eIndices);
-
-            Ne = length(eIndices);
-            x = zeros(1,Ne);
-            y = zeros(1,Ne);
-            Fx = zeros(1,Ne);
-            Fy = zeros(1,Ne);
-            cnt = 0;
-
-            torque = 0;
+            
+            torque = 0;            
             for eIndex = eIndices'
-
+    
                 p1Index = obj.m.edges(eIndex,1);
-                p2Index = obj.m.edges(eIndex,2);
+                p2Index = obj.m.edges(eIndex,end);
+                p3Index = obj.m.edges(eIndex,2);
 
                 r1 = obj.m.nodes(p1Index,:);
                 r2 = obj.m.nodes(p2Index,:);
+                r3 = obj.m.nodes(p3Index,:);
 
                 % finding normal vector
-                n = r2 - r1;
+                n = r3 - r1;
                 el = norm(n); % edge length
                 n = n/el;
 
@@ -915,6 +609,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
                 index1 = find(p1Index == obj.m.cl(elIndex,:));
                 index2 = find(p2Index == obj.m.cl(elIndex,:));
+                index3 = find(p3Index == obj.m.cl(elIndex,:));
 
                 mu0 = 4*pi*1e-7;
 
@@ -923,7 +618,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
                 Bx2 = obj.results.BxnSmooth(index2, elIndex);
                 By2 = obj.results.BynSmooth(index2, elIndex);
-
+                
                 Txx = (0.5/mu0) * (Bx1^2 - By1^2);
                 Txy_yx = (1/mu0) * (Bx1 * By1);
                 Tyy = (0.5/mu0) * (By1^2 - Bx1^2);
@@ -947,35 +642,13 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
                 torque = torque + a + b/2 + c/3;
 
-                rmid = (r1+r2)/2;
-
-                cnt = cnt + 1;
-                x(cnt) = rmid(1);
-                y(cnt) = rmid(2);
-                Fx(cnt) = (Fx1+Fx2)/2;
-                Fy(cnt) = (Fy1+Fy2)/2;
-
-
             end
 
-        end
-
-        % torque evaluation by Arrkio method
-        function torque = evalTorqueByArkkioTL3(obj, mzName, GapLength)
-
-            obj.evalBe;
-            mzName = obj.m.checkMeshZoneExistence(mzName);
-            mzptr = obj.m.mzs.(mzName);
-            b = [obj.results.Bxg(obj.m.ezi(:, mzptr.zi)); obj.results.Byg(obj.m.ezi(:, mzptr.zi))]';
-            p = mzptr.getCenterOfElements;
-            b = ext_xy2rt(p, b);
-            r = sqrt(sum(p.^2, 2));
-            torque = mzptr.getAreaOfElements' * (b(:, 1) .* b(:, 2) .* r);
-            torque = torque * obj.getDepth * obj.units.k_length^2 / GapLength / (4 * pi * 1e-7);
+            torque = torque * obj.getDepth * obj.units.k_length^2;
 
         end
 
-        function torque = evalTorqueByArkkioTL6(obj, mzName, GapLength)
+        function torque = evalTorqueByArkkio(obj, mzName, GapLength)
 
             obj.evalBe;
             mzName = obj.m.checkMeshZoneExistence(mzName);
@@ -1011,79 +684,28 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        function torque = evalTorqueByArkkio(obj, mzName, GapLength)
-
-            if obj.m.isTL3
-                torque = obj.evalTorqueByArkkioTL3(mzName, GapLength);
-            elseif obj.m.isTL6
-                torque = obj.evalTorqueByArkkioTL6(mzName, GapLength);
-            else
-                error('Wrong element type');
-            end
-
-        end
-
-        % torque evaluation by Arrkio method using smoothed field data
-        function torque = evalTorqueByArkkioSmoothTL3(obj, mzName, GapLength)
-
-            mzName = obj.m.checkMeshZoneExistence(mzName);
-            mzptr = obj.m.mzs.(mzName);
-            bx = sum(obj.results.BxnSmooth(:,obj.m.ezi(:, mzptr.zi)),1)'/3;
-            by = sum(obj.results.BynSmooth(:,obj.m.ezi(:, mzptr.zi)),1)'/3;
-            b = [bx,by];
-            p = mzptr.getCenterOfElements;
-            b = ext_xy2rt(p, b);
-            r = sqrt(sum(p.^2, 2));
-            torque = mzptr.getAreaOfElements' * (b(:, 1) .* b(:, 2) .* r);
-            torque = torque * obj.getDepth * obj.units.k_length^2 / GapLength / (4 * pi * 1e-7);
-
-        end
-
-        function torque = evalTorqueByArkkioSmooth(obj, mzName, GapLength)
-
-            if obj.m.isTL3
-                torque = obj.evalTorqueByArkkioSmoothTL3(mzName, GapLength);
-            elseif obj.m.isTL6
-                torque = obj.evalTorqueByArkkioTL6(mzName, GapLength);
-            else
-                error('Wrong element type');
-            end
-
-        end
-
-        %% post-proccessing: magnitude plots
+        %% post-proccessing: plots
         function varargout = plotAmag(obj, varargin)
-
-            % get figure, axes, and the number of contours
+            
             [f,ax,Ncontour] = emdlab_flib_faxN(varargin{:});
 
-            % plot Amag using patch function
-            if obj.m.isTL3
-                patch('faces', obj.m.cl(:, 1:3), 'vertices', obj.m.nodes, ...
-                    'FaceVertexCData', obj.results.A, 'FaceColor', 'interp', ...
-                    'EdgeColor', 'none', 'parent', ax);
-            elseif obj.m.isTL6
-                patch('faces', obj.m.cl(:, [1,4,2,5,3,6]), 'vertices', obj.m.nodes, ...
+            patch('faces', obj.m.cl(:, [1,4,2,5,3,6]), 'vertices', obj.m.nodes, ...
                 'FaceVertexCData', obj.results.A, 'FaceColor', 'interp', ...
                 'EdgeColor', 'none', 'parent', ax);
-            else
-                error('Wrong element type');
-            end
 
-            colormap(ax,jet(Ncontour));
+            colormap(jet(Ncontour));
             cb = colorbar;
             cb.FontName = 'Verdana';
             cb.FontSize = 12;
-            cb.Label.String = 'Magnetic Vector Potential [Wb/m]';
+            cb.Label.String = 'Magnetic Vector Potential [A/m]';
 
             index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
             patch('faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
                 'EdgeColor', 'k', 'parent', ax);
 
-            zoom on;
-            axis(ax, 'off');
-            axis(ax, 'equal');
             set(ax, 'clipping', 'off');
+            axis off equal;
+            zoom on;
 
             if nargout == 1, varargout{1} = f;
             elseif nargout == 2, varargout{1} = f; varargout{2} = ax;
@@ -1092,35 +714,65 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
+        function varargout = plotAmag3Ds(obj, Ncontour)
+
+            if nargin < 2
+                Ncontour = 15;
+            end
+
+            [f,ax] = emdlab_r3d_mesh;
+            f.Name = 'Magnetic Vector Potential Amplitude [wb/m]';
+
+            patch('faces', obj.m.cl(:, 1:3), 'vertices', [obj.m.nodes,obj.results.A*1000], ...
+                'FaceVertexCData', obj.results.A, 'FaceColor', 'interp', ...
+                'EdgeColor', 'k', 'parent', ax);
+
+            index = obj.m.edges(:, 3) ~= obj.m.edges(:, 4);
+            patch('Faces', obj.m.edges(index, [1, 2]), 'Vertices', obj.m.nodes, ...
+                'FaceColor', 'none', 'EdgeColor', 'k', 'LineWidth', 1.2, 'parent', ax);
+
+            colormap(jet(Ncontour));
+            %             cb = colorbar(ax);
+            %             cb.FontName = 'Verdana';
+            %             cb.FontSize = 12;
+            %             cb.Label.String = 'Magnetic Vector Potential [A/m]';
+
+
+            %             index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
+            %             patch('faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
+            %                 'EdgeColor', 'k', 'parent', ax);
+
+            %             axis off equal;
+            %             zoom on;
+            set(f, 'Visible', 'on');
+            set(gcf,'clipping', 'off');
+            set(gca,'clipping', 'off');
+
+            if nargout == 1
+                varargout{1} = f;
+            elseif nargout > 1
+                error('Too many output argument.');
+            end
+
+        end
+
         function varargout = plotFluxLines(obj, varargin)
 
-            % get figure, axes, and the number of contours
             [f,ax,Ncontour] = emdlab_flib_faxN(varargin{:});
 
             % evaluation of contour lines
-            if obj.m.isTL3
-                cRange = linspace(min(obj.results.A), max(obj.results.A), Ncontour+2);
-                c = tmzpc_contour_tl3(obj.m.cl, obj.m.nodes, obj.results.A, cRange(2:end-1));
-                t = 1:size(c, 1);
-                t = reshape(t, 2, [])';
-            elseif obj.m.isTL6
-                cRange = linspace(min(obj.results.A), max(obj.results.A), Ncontour+2);
-                cl4 = [obj.m.cl(:,[1,4,6]);obj.m.cl(:,[4,2,5]);obj.m.cl(:,[6,4,5]);obj.m.cl(:,[6,5,3])];
-                c = tmzpc_contour_tl3(cl4, obj.m.nodes, obj.results.A, cRange(2:end-1));
-                t = 1:size(c, 1);
-                t = reshape(t, 2, [])';
-            else
-                error('Wrong element type');
-            end            
+            cRange = linspace(min(obj.results.A), max(obj.results.A), Ncontour+2);
+            cl4 = [obj.m.cl(:,[1,4,6]);obj.m.cl(:,[4,2,5]);obj.m.cl(:,[6,4,5]);obj.m.cl(:,[6,5,3])];
+            c = tmzpc_contour_tl3(cl4, obj.m.nodes, obj.results.A, cRange(2:end-1));
+            t = 1:size(c, 1);
+            t = reshape(t, 2, [])';
+            patch(ax, 'faces', t, 'vertices', c, 'edgecolor', 'k');
 
-            % plot mesh wireframe
+            % plotting
             index = obj.m.edges(:, 3) ~= obj.m.edges(:, 4);
             patch(ax, 'Faces', obj.m.edges(index, [1, 2]), 'Vertices', obj.m.nodes, ...
                 'FaceColor', 'k', 'EdgeColor', 'k', 'LineWidth', 0.6);
-
-            % plot contour lines
             patch(ax, 'faces', t, 'vertices', c, 'edgecolor', 'b');
-
             axis off equal;
             zoom on;
             set(ax, 'clipping', 'off');
@@ -1134,67 +786,30 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         function varargout = plotBmag(obj, varargin)
 
-            if numel(varargin)
-                [f,ax] = emdlab_flib_fax(varargin{1});
+            % specefying mesh zones for plot
+            if ~ numel(varargin)
+                ti = true(obj.m.Ne, 1);
             else
-                [f,ax] = emdlab_flib_fax();
-            end
+                ti = false(obj.m.Ne, 1);
 
-            % amplitude of the B at mesh points
-            if numel(varargin)
-                if isa(varargin{1}, 'matlab.graphics.axis.Axes')
-                    ti = obj.m.getti(varargin{2:end});
-                else
-                    ti = obj.m.getti(varargin{:});
+                for i = 1:numel(varargin)
+                    ti = bitor(ti, obj.m.ezi(:, obj.m.mzs.(rmspaces(varargin{i})).zi));
                 end
-            else
-                ti = obj.m.getti;
+
             end
-            ampB = sqrt(obj.results.Bxn(:,ti).^2 + obj.results.Byn(:,ti).^2);
-
-            % plot using patch function
-            xdata = obj.m.nodes(:,1);
-            ydata = obj.m.nodes(:,2);
-            patch('XData', xdata(obj.m.cl(ti, [1,2,3]))', 'YData', ydata(obj.m.cl(ti, [1,2,3]))', ...
-                'CData', ampB, 'FaceColor', 'interp', ...
-                'EdgeColor', 'none', 'parent', ax);
-
-            index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
-            patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
-                'EdgeColor', [150,150,150]/255);
-            colormap(ax,jet(15));
-            cb = colorbar;
-            cb.FontName = 'Verdana';
-            cb.FontSize = 12;
-            cb.Label.String = 'Flux Density [tesla]';
-            clim([0,1.9]);
-
-            axis off equal;
-            zoom on;
-            set(ax, 'clipping', 'off');
-
-            if nargout == 1, varargout{1} = f;
-            elseif nargout == 2, varargout{1} = f; varargout{2} = ax;
-            elseif nargout > 1, error('Too many output argument.');
-            end
-
-        end
-
-        function varargout = plotHmag(obj, varargin)
 
             % amplitude of the B at mesh points
-            ti = obj.m.getti(varargin{:});
-            ampH = sqrt(obj.results.Hxn(:,ti).^2 + obj.results.Hyn(:,ti).^2);
+            ampB = sqrt(obj.results.Bxn(:,ti).^2 + obj.results.Byn(:,ti).^2);
 
             % plot using patch function
             f = figure;
             ax = axes(f);
-            f.Name = 'Magnetic flux density amplitude';
+            f.Name = 'Magnetic Flux Density Amplitude [tesla]';
 
             xdata = obj.m.nodes(:,1);
             ydata = obj.m.nodes(:,2);
             patch('XData', xdata(obj.m.cl(ti, [1,2,3]))', 'YData', ydata(obj.m.cl(ti, [1,2,3]))', ...
-                'CData', ampH, 'FaceColor', 'interp', ...
+                'CData', ampB, 'FaceColor', 'interp', ...
                 'EdgeColor', 'none', 'parent', ax);
 
             index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
@@ -1212,10 +827,9 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             set(ax, 'clipping', 'off');
             set(f, 'Visible', 'on');
 
-            if nargout == 1
-                varargout{1} = f;
-            elseif nargout > 1
-                error('Too many output argument.');
+            if nargout == 1, varargout{1} = f;
+            elseif nargout == 2, varargout{1} = f; varargout{2} = ax;
+            elseif nargout > 1, error('Too many output argument.');
             end
 
         end
@@ -1223,9 +837,18 @@ classdef emdlab_solvers_ms2d_tlcp < handle
         function varargout = plotBmag3D(obj, varargin)
 
             % specefying zones
-            ti = obj.m.getti(varargin{:});
+            if ~ numel(varargin)
+                ti = true(obj.m.Ne, 1);
+            else
+                ti = false(obj.m.Ne, 1);
 
-            ampB = sqrt(sum(obj.results.Bxg(ti).^2 + obj.results.Byg(ti).^2, 2));
+                for i = 1:numel(varargin)
+                    ti = bitor(ti, obj.m.ezi(:, obj.m.mzs.(rmspaces(varargin{i})).zi));
+                end
+
+            end
+
+            ampB = sqrt(sum(obj.results.Bex(ti).^2 + obj.results.Bey(ti).^2, 2));
             % plot through patch
             f = figure;
             ax = axes(f);
@@ -1259,6 +882,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         function varargout = plotBmagF(obj, N, varargin)
 
+            % set default number of contours
             if nargin<2, N = 14; end
 
             obj.evalBn;
@@ -1287,189 +911,19 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             cb.FontName = 'Verdana';
             cb.FontSize = 12;
             cb.Label.String = 'Flux Density [tesla]';
-
-            % evaluation of contour lines
-            if obj.m.isTL3
-                cRange = linspace(min(obj.results.A), max(obj.results.A), N+2);
-                c = tmzpc_contour_tl3(obj.m.cl, obj.m.nodes, obj.results.A, cRange(2:end-1));
-                t = 1:size(c, 1);
-                t = reshape(t, 2, [])';
-            elseif obj.m.isTL6
-                cRange = linspace(min(obj.results.A), max(obj.results.A), N+2);
-                cl4 = [obj.m.cl(:,[1,4,6]);obj.m.cl(:,[4,2,5]);obj.m.cl(:,[6,4,5]);obj.m.cl(:,[6,5,3])];
-                c = tmzpc_contour_tl3(cl4, obj.m.nodes, obj.results.A, cRange(2:end-1));
-                t = 1:size(c, 1);
-                t = reshape(t, 2, [])';
-            else
-                error('Wrong element type');
-            end            
-
-            % plot contour lines
-            patch(ax, 'faces', t, 'vertices', c, 'edgecolor', 'k');
-
-            axis off equal;
-            zoom on;
-            set(ax, 'clipping', 'off');
-            set(f, 'Visible', 'on');
-
-            if nargout == 1, varargout{1} = f;
-            elseif nargout == 2, varargout{1} = f; varargout{2} = ax;
-            elseif nargout > 1, error('Too many output argument.');
-            end
-
-        end
-
-        function varargout = plotBmagFluxLines(obj, varargin)
-
-            [f,ax,Ncontour] = emdlab_flib_faxN(varargin{:});
-
-            obj.evalBn;
-
-            % specefying zones
-            ti = obj.m.getti();
-
-            % calculate amplitude of B at mesh nodes
-            ampB = sqrt(obj.results.BxnSmooth.^2 + obj.results.BynSmooth.^2);
-
-
-            xdata = obj.m.nodes(:,1);
-            ydata = obj.m.nodes(:,2);
-            patch('XData', xdata(obj.m.cl(ti, [1,2,3]))', 'YData', ydata(obj.m.cl(:, [1,2,3]))', ...
-                'CData', ampB, 'FaceColor', 'interp', 'EdgeColor', 'none', 'parent', ax);
-
-            index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
-            patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
-                'EdgeColor', [150,150,150]/255);
-            colormap(ax,jet(15));
-            cb = colorbar;
-            cb.FontName = 'Verdana';
-            cb.FontSize = 12;
-            cb.Label.String = 'Flux Density [tesla]';
-            clim([0,1.9]);
-
-            % evaluation of contour lines
-            if obj.m.isTL3
-                cRange = linspace(min(obj.results.A), max(obj.results.A), Ncontour+2);
-                c = tmzpc_contour_tl3(obj.m.cl, obj.m.nodes, obj.results.A, cRange(2:end-1));
-                t = 1:size(c, 1);
-                t = reshape(t, 2, [])';
-            elseif obj.m.isTL6
-                cRange = linspace(min(obj.results.A), max(obj.results.A), Ncontour+2);
-                cl4 = [obj.m.cl(:,[1,4,6]);obj.m.cl(:,[4,2,5]);obj.m.cl(:,[6,4,5]);obj.m.cl(:,[6,5,3])];
-                c = tmzpc_contour_tl3(cl4, obj.m.nodes, obj.results.A, cRange(2:end-1));
-                t = 1:size(c, 1);
-                t = reshape(t, 2, [])';
-            else
-                error('Wrong element type');
-            end            
-
-            % plot contour lines
-            patch(ax, 'faces', t, 'vertices', c, 'edgecolor', 'k');
-
-            axis off equal;
-            zoom on;
-            set(ax, 'clipping', 'off');
-
-            if nargout == 1
-                varargout{1} = f;
-            elseif nargout > 1
-                error('Too many output argument.');
-            end
-
-        end
-
-        function varargout = plotBmagFSkew(obj, ax, z, N, varargin)
-
-            if nargin<4, N = 14; end
-
-            obj.evalBn;
-
-            % specefying zones
-            ti = obj.m.getti(varargin{:});
-
-            % calculate amplitude of B at mesh nodes
-            ampB = sqrt(obj.results.BxnSmooth(:,ti).^2 + obj.results.BynSmooth(:,ti).^2);
-
-            % plot using patch function
-            f = ax.Parent;
-            f.Name = 'Magnetic flux density with flux lines: smoothed skew';
-
-            xdata = obj.m.nodes(:,1);
-            ydata = obj.m.nodes(:,2);
-            zdata = z * ones(obj.m.Nn,1);
-            patch('XData', xdata(obj.m.cl(ti, [1,2,3]))', 'YData', ydata(obj.m.cl(ti, [1,2,3]))', ...
-                'ZData', zdata(obj.m.cl(ti, [1,2,3]))', ...
-                'CData', ampB, 'FaceColor', 'interp', 'EdgeColor', 'none', 'parent', ax);
-
-            index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
-            patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', [obj.m.nodes,zdata], ...
-                'EdgeColor', [150,150,150]/255);
-            colormap(jet(15));
-            cb = colorbar;
-            cb.FontName = 'Verdana';
-            cb.FontSize = 12;
-            cb.Label.String = 'Flux Density [tesla]';
             clim([0,1.9]);
 
             cRange = linspace(min(obj.results.A), max(obj.results.A), N+2);
-            c = tmzpc_contour_tl3(obj.m.cl, obj.m.nodes, obj.results.A, cRange(2:end-1));
+            cl4 = [obj.m.cl(:,[1,4,6]);obj.m.cl(:,[4,2,5]);obj.m.cl(:,[6,4,5]);obj.m.cl(:,[6,5,3])];
+            c = tmzpc_contour_tl3(cl4, obj.m.nodes, obj.results.A, cRange(2:end-1));
             t = 1:size(c, 1);
             t = reshape(t, 2, [])';
-            patch(ax, 'faces', t, 'vertices', [c,z*ones(size(c,1),1)], 'edgecolor', 'k');
-
-            %             axis off equal;
-            %             zoom on;
-            set(ax, 'clipping', 'off');
-            set(f, 'Visible', 'on');
-
-            if nargout == 1
-                varargout{1} = f;
-            elseif nargout > 1
-                error('Too many output argument.');
-            end
-
-        end
-
-        function varargout = plotBmagSmooth(obj, varargin)
-
-            if numel(varargin)
-                [f,ax] = emdlab_flib_fax(varargin{1});
-            else
-                [f,ax] = emdlab_flib_fax();
-            end
-
-            % amplitude of the B at mesh points
-            if numel(varargin)
-                if isa(varargin{1}, 'matlab.graphics.axis.Axes')
-                    ti = obj.m.getti(varargin{2:end});
-                else
-                    ti = obj.m.getti(varargin{:});
-                end
-            else
-                ti = obj.m.getti;
-            end
-
-            % calculate amplitude of B at mesh nodes
-            ampB = sqrt(obj.results.BxnSmooth(:,ti).^2 + obj.results.BynSmooth(:,ti).^2);
-
-            xdata = obj.m.nodes(:,1);
-            ydata = obj.m.nodes(:,2);
-            patch('XData', xdata(obj.m.cl(ti, [1,2,3]))', 'YData', ydata(obj.m.cl(ti, [1,2,3]))', ...
-                'CData', ampB, 'FaceColor', 'interp', 'EdgeColor', 'none', 'parent', ax);
-
-            index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
-            patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
-                'EdgeColor', [150,150,150]/255);
-            colormap(jet(15));
-            cb = colorbar;
-            cb.FontName = 'Verdana';
-            cb.FontSize = 12;
-            cb.Label.String = 'Flux Density [tesla]';
-            clim([0,1.9]);
+            patch(ax, 'faces', t, 'vertices', c, 'edgecolor', 'k');
 
             axis off equal;
             zoom on;
             set(ax, 'clipping', 'off');
+            set(f, 'Visible', 'on');
 
             if nargout == 1, varargout{1} = f;
             elseif nargout == 2, varargout{1} = f; varargout{2} = ax;
@@ -1477,33 +931,45 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             end
 
         end
+        
+        function varargout = plotBmagSmooth(obj, varargin)
 
-        function varargout = plotHmagSmooth(obj, varargin)
+            obj.evalBn;
 
-            % calculate amplitude of B at mesh nodes
-            obj.evalHn;
-            ti = obj.m.getti(varargin{:});
-            ampH = sqrt(obj.results.HxnSmooth(:,ti).^2 + obj.results.HynSmooth(:,ti).^2);
+            % specefying zones
+            if ~ numel(varargin)
+                ti = true(obj.m.Ne, 1);
+            else
+                ti = false(obj.m.Ne, 1);
 
-            % plot using patch function
-            f = emdlab_r2d_mesh;
+                for i = 1:numel(varargin)
+                    ti = bitor(ti, obj.m.ezi(:, obj.m.mzs.(erase(varargin{i}, ' ')).zi));
+                end
+
+            end
+
+            ampB = sqrt(obj.results.BxnSmooth(:,ti).^2 + obj.results.BynSmooth(:,ti).^2);
+            % plot through patch
+            f = figure;
             ax = axes(f);
-            f.Name = 'Magnetic field intensity amplitude: smoothed';
+            f.Name = '[Magnetic Flux Density Amplitude [Tesla]]';
 
             xdata = obj.m.nodes(:,1);
             ydata = obj.m.nodes(:,2);
             patch('XData', xdata(obj.m.cl(ti, [1,2,3]))', 'YData', ydata(obj.m.cl(ti, [1,2,3]))', ...
-                'CData', ampH, 'FaceColor', 'interp', 'EdgeColor', 'none', 'parent', ax);
+                'CData', ampB, 'FaceColor', 'interp', ...
+                'EdgeColor', 'none', 'parent', ax);
 
             index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
             patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
                 'EdgeColor', 'k');
-
-            colormap(jet(15));
+            colormap(jet);
             cb = colorbar;
             cb.FontName = 'Verdana';
             cb.FontSize = 12;
-            cb.Label.String = 'Magnetic Field [A/m]';
+            cb.Label.String = 'Flux Density [tesla]';
+            %             cb.Limits(2) = 1.7;
+
 
             axis off equal;
             zoom on;
@@ -1516,40 +982,16 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                 error('Too many output argument.');
             end
 
+
         end
 
-        %% post-proccessing: vector plots
-        function varargout = plotFQvecOnCenterOfElements(obj, FQname, varargin)
-
-            if numel(varargin)
-                [f,ax] = emdlab_flib_fax(varargin{1});
-            else
-                [f,ax] = emdlab_flib_fax();
-            end
-
+        function varargout = plotBvecOnCenterOfElements(obj)
+            obj.evalBe;
+            f = figure;
+            ax = axes(f);
+            f.Name = 'Magnetic field on center of mesh elements';
             ax.NextPlot = 'add';
-
-            % get center of elements
             c = obj.m.getCenterOfElements;
-
-            switch FQname
-                case 'B'
-                    obj.evalBn;
-                    [FQx,FQy] = obj.getFQxFQyOnPoints(c(:,1),c(:,2),'B');
-
-                case 'M'
-                    FQx = obj.edata.MagnetizationX(1,:);
-                    FQy = obj.edata.MagnetizationY(1,:);
-
-                case 'H'
-                    obj.evalHn;
-                    [FQx,FQy] = obj.getFQxFQyOnPoints(c(:,1),c(:,2),'H');
-
-                otherwise
-                    error('Wrong field quantity.');
-            end
-
-            % mesh zone colors
             color = zeros(obj.m.Ne, 3);
             mzNames = fieldnames(obj.m.mzs);
 
@@ -1558,39 +1000,84 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                 color(obj.m.ezi(:, mzptr.zi), :) = repmat(mzptr.color, mzptr.Ne, 1);
             end
 
-            % plot mesh elements
             patch(ax, 'faces', obj.m.cl(:, 1:3), 'vertices', obj.m.nodes, ...
                 'facecolor', 'flat', 'FaceVertexCData', color, 'EdgeColor', 'w', 'facealpha', 0.5);
-
-            % plot vector field
-            quiver(ax, c(:, 1), c(:, 2), FQx', FQy', 'color', 'k');
-
-            % plot wireframe geometry
-            index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
-            patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
-                'EdgeColor', [130,130,130]/255);
-
+            quiver(ax, c(:, 1), c(:, 2), sum(obj.results.Bxn)'/3, sum(obj.results.Byn)'/3, 'color', 'k');
             axis(ax, 'off', 'equal');
             zoom on;
+            set(f, 'Visible', 'on');
             set(ax, 'clipping', 'off');
 
-            if nargout == 1, varargout{1} = f;
-            elseif nargout == 2, varargout{1} = f; varargout{2} = ax;
-            elseif nargout > 1, error('Too many output argument.');
+            if nargout == 1
+                varargout{1} = f;
+            elseif nargout > 1
+                error('Too many output argument.');
             end
 
         end
 
-        function plotBvecOnCenterOfElements(obj, varargin)
-            obj.plotFQvecOnCenterOfElements('B', varargin{:});
+        function varargout = plotMvecOnCenterOfElements(obj)
+
+            f = figure;
+            ax = axes(f);
+            f.Name = 'Magnetization vectors';
+            ax.NextPlot = 'add';
+            c = obj.m.getCenterOfElements;
+            color = zeros(obj.m.Ne, 3);
+            mzNames = fieldnames(obj.m.mzs);
+
+            for i = 1:obj.m.Nmzs
+                mzptr = obj.m.mzs.(mzNames{i});
+                color(obj.m.ezi(:, mzptr.zi), :) = repmat(mzptr.color, mzptr.Ne, 1);
+            end
+
+            patch(ax, 'faces', obj.m.cl(:, 1:3), 'vertices', obj.m.nodes, ...
+                'facecolor', 'flat', 'FaceVertexCData', color, 'EdgeColor', 'w', 'facealpha', 1);
+            quiver(ax, c(:, 1), c(:, 2), obj.edata.MagnetizationX(1,:)', obj.edata.MagnetizationY(1,:)', 'color', 'k');
+            index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
+            patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
+                'EdgeColor', [130,130,130]/255);
+            axis(ax, 'off', 'equal');
+            zoom on;
+            set(f, 'Visible', 'on');
+            set(ax, 'clipping', 'off');
+
+            if nargout == 1
+                varargout{1} = f;
+            elseif nargout > 1
+                error('Too many output argument.');
+            end
+
         end
 
-        function plotHvecOnCenterOfElements(obj, varargin)
-            obj.plotFQvecOnCenterOfElements('H', varargin{:});
-        end
+        function varargout = plotBvecOnEdges(obj)
 
-        function plotMvecOnCenterOfElements(obj, varargin)
-            obj.plotFQvecOnCenterOfElements('M', varargin{:});
+            obj.evalBed;
+            f = GraphicWindow;
+            f.Name = 'Magnetic field on mesh nodes';
+            h = guihandles(f);
+            h.va.NextPlot = 'add';
+            color = zeros(obj.m.Ne, 3);
+            mzNames = fieldnames(obj.m.mzs);
+
+            for i = 1:obj.m.Nmzs
+                mzptr = obj.m.mzs.(mzNames{i});
+                color(obj.m.ezi(:, mzptr.zi), :) = repmat(mzptr.color, mzptr.Ne, 1);
+            end
+
+            patch(h.va, 'faces', obj.m.cl(:, 1:3), 'vertices', obj.m.nodes, ...
+                'facecolor', 'flat', 'FaceVertexCData', color, 'EdgeColor', 'w', 'facealpha', 0.5);
+            c = (obj.m.nodes(obj.m.edges(:, 1), :) + obj.m.nodes(obj.m.edges(:, 2), :)) / 2;
+            quiver(h.va, c(:, 1), c(:, 2), obj.results.Bedx, obj.results.Bedy, 'color', 'k');
+            axis(h.va, 'off', 'equal');
+            set(f, 'Visible', 'on');
+
+            if nargout == 1
+                varargout{1} = f;
+            elseif nargout > 1
+                error('Too many output argument.');
+            end
+
         end
 
         function varargout = plotBvecOnNodes(obj)
@@ -1609,7 +1096,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             end
 
             patch(h.va, 'faces', obj.m.cl(:, 1:3), 'vertices', obj.m.nodes, ...
-                'facecolor', 'flat', 'FaceVertexCData', color, 'EdgeColor', 'w', 'facealpha', 1);
+                'facecolor', 'flat', 'FaceVertexCData', color, 'EdgeColor', 'w', 'facealpha', 0.5);
             quiver(h.va, obj.m.nodes(:, 1), obj.m.nodes(:, 2), obj.results.Bnx, obj.results.Bny, 'color', 'k');
             axis(h.va, 'off', 'equal');
             set(f, 'Visible', 'on');
@@ -1644,7 +1131,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             xg = xg(index);
             yg = yg(index);
             ah = setFigure();
-            quiver(xg, yg, obj.results.Bxg(e), obj.results.Byg(e), 'color', 'b', 'parent', ah);
+            quiver(xg, yg, obj.results.Bex(e), obj.results.Bey(e), 'color', 'b', 'parent', ah);
             axis off equal
             index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
             patch('faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
@@ -1652,18 +1139,61 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             set(gcf, 'HandleVisibility', 'off', 'Visible', 'on');
         end
 
-        function plotBvecOnCircle(obj, varargin)
+        function plotMvec(obj, scale)
 
-            [bx, by, x, y] = obj.getBxByOnCircle(varargin{:});
+            if nargin < 2
+                scale = 1;
+            end
+
+            tr = triangulation(obj.m.cl(:, 1:3), obj.m.nodes);
+            c = tr.incenter;
+            close all;
+            axis off equal; hold on;
+            set(gcf, 'Color', 'k')
+            quiver(c(:, 1), c(:, 2), obj.edata.MagnetizationX', obj.edata.MagnetizationY', ...
+                scale, 'color', 'w');
+            title('Magnetization Vector', 'color', 'c', 'fontsize', 15);
+            set(gcf, 'Renderer', 'opengl');
+            zoom on; hold on
+        end
+
+        function [p, b] = getBvecOnSegment(obj, p1, p2, N)
+            if nargin < 4, N = 5; end
+            % sample points
+            p = zeros(N, 2);
+            p(:, 1) = linspace(p1(1), p2(1), N);
+            p(:, 2) = linspace(p1(2), p2(2), N);
+            ti = pointLocation(triangulation(obj.m.cl, obj.m.nodes), p);
+            b = [obj.results.Bex(ti), obj.results.Bey(ti)];
+        end
+
+        function [xp, xB] = getBOnCircle(obj, c, r, N)
+            tr = triangulation(obj.m.cl(:, 1:3), obj.m.nodes);
+            xp = zeros(N, 2);
+
+            for i = 1:N
+                xp(i, :) = protate(c + [r, 0], (i - 1) * 2 * pi / N, c);
+            end
+
+            index = tr.pointLocation(xp);
+            index = index(~ isnan(index));
+            xB = obj.B(index, :);
+        end
+
+        function plotBvecOnCircle(obj, c, r, N)
+            [xp, xB] = obj.getBOnCircle(c, r, N);
             close all
-            quiver(x, y, bx, by);
-            axis off equal;
-
+            quiver(xp(:, 1), xp(:, 2), xB(:, 1), xB(:, 2));
+            axis off equal
         end
 
         function plotBrBtOnCircle(obj, varargin)
 
             [br, bt, t] = obj.getBrBtOnCircle(varargin{:});
+            ti = linspace(t(1), t(end), 10*length(t));
+            br = interp1(t, br, ti, 'spline');
+            bt = interp1(t, bt, ti, 'spline');
+            t = ti;
             figure('Name', 'Br and Bt on circle')
             subplot(211)
             t = t * 180/pi;
@@ -1684,7 +1214,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         function plotBrBtOnArc(obj, varargin)
 
-            [br, bt, t] = obj.getBrBtOnArc(varargin{:});
+            [br, bt, t] = obj.getBrBtOnArc(varargin{:});            
             figure('Name', 'Br and Bt on circle')
             subplot(211)
             t = t * 180/pi;
@@ -1702,30 +1232,8 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             zoom on;
 
         end
-
-        function plotHrHtOnCircle(obj, varargin)
-
-            [Hr, Ht, t] = obj.getHrHtOnCircle(varargin{:});
-            figure('Name', 'Hr and Ht on circle')
-            subplot(211)
-            t = t * 180/pi;
-            plot(t,Hr/1e3);
-            set(gca,'Xlim',[0,360])
-            xlabel('Mechanical Angle [deg]')
-            ylabel('H_r [kA/m]')
-            title('Rdaial Magnetic Field Waveform');
-            subplot(212)
-            plot(t,Ht/1e3)
-            set(gca,'Xlim',[0,360])
-            xlabel('Mechanical Angle [deg]')
-            ylabel('H_t [kA/m]')
-            title('Tangentional Magnetic Field Waveform');
-            zoom on;
-
-        end
-
-        function plotBrFFT(obj, poles, Nharmonics, varargin)
-
+        
+        function plotBrfft(obj, POLES, Nh, varargin)
             obj.evalBn;
             index = obj.m.getnIndexOnCircle(varargin{:});
             p = obj.m.nodes(index, :);
@@ -1744,27 +1252,26 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             ylabel('B_r [Tesla]')
             title(['Rdaial Flux Density, Mean = ', num2str(mean(abs(b(:, 1))))])
             hold all;
-            an = (1 / pi) * int_trap(full(repmat(b(:, 1)', Nharmonics, 1) .* cos(poles * sparse(1:Nharmonics, 1:Nharmonics, 1:Nharmonics) * repmat(pAngle', Nharmonics, 1))), pAngle');
-            bn = (1 / pi) * int_trap(full(repmat(b(:, 1)', Nharmonics, 1) .* sin(poles * sparse(1:Nharmonics, 1:Nharmonics, 1:Nharmonics) * repmat(pAngle', Nharmonics, 1))), pAngle');
+            an = (1 / pi) * int_trap(full(repmat(b(:, 1)', Nh, 1) .* cos(POLES * sparse(1:Nh, 1:Nh, 1:Nh) * repmat(pAngle', Nh, 1))), pAngle');
+            bn = (1 / pi) * int_trap(full(repmat(b(:, 1)', Nh, 1) .* sin(POLES * sparse(1:Nh, 1:Nh, 1:Nh) * repmat(pAngle', Nh, 1))), pAngle');
             hn = sqrt(an.^2 + bn.^2);
             y = zeros(length(pAngle), 1);
 
-            for i = 1:Nharmonics
-                y = y + an(i) * cos(poles * i * pAngle) + bn(i) * sin(poles * i * pAngle);
+            for i = 1:Nh
+                y = y + an(i) * cos(POLES * i * pAngle) + bn(i) * sin(POLES * i * pAngle);
                 plot(pAngle * 180 / pi, y, '-.');
             end
 
             subplot(212)
-            stem(1:Nharmonics, hn)
-            set(gca, 'Xlim', [0, Nharmonics + 1])
+            stem(1:Nh, hn)
+            set(gca, 'Xlim', [0, Nh + 1])
             xlabel('Harmonic Index')
             ylabel('Harmonic Amplitude')
             title(['Harmonic Decomposition of Radial Flux, H[1] = ', num2str(hn(1))]);
-
         end
 
         %% post-proccessing: interpolation functions
-        % get triangle index (ti) of points specified by theri (x,y) coordinates
+        % get triangle index of points
         function ti = getPointsLocation(obj, x, y)
 
             if (~isvector(x)) || (~isvector(y))
@@ -1779,80 +1286,12 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             if isrow(y), y = y'; end
 
             % find index of triangle containing the (x,y) point
-            if obj.m.isTL3
-                ti = pointLocation(triangulation(obj.m.cl, obj.m.nodes), [x,y]);
-            elseif obj.m.isTL6
-                ti = pointLocation(triangulation(obj.m.cl(:,1:3), obj.m.nodes(1:end-size(obj.m.edges,1),:)), [x,y]);
-            else
-                error('Wrong element type');
-            end
+            ti = pointLocation(triangulation(obj.m.cl(:,1:3), obj.m.nodes(1:end-size(obj.m.edges,1),:)), [x,y]);
 
         end
 
-        % get the value of magnetic vector potential Az on points
-        function Az = getAzOnPoints(obj, x, y)
-
-            % find triangle indicies related to point locations
-            ti = obj.getPointsLocation(x, y);
-
-            % care points out of the mesh
-            index = isnan(ti);
-            ti(index) = 1;
-
-            % interpolate the value of Az on points
-            if obj.m.isTL3
-                Az = emdlab_m2d_tl3_interpA(obj.m.cl, obj.m.nodes, obj.results.A(obj.m.cl'), obj.m.JIT, ti, x, y);
-            elseif obj.m.isTL6
-                Az = emdlab_m2d_tl6_interpA(obj.m.cl, obj.m.nodes, obj.results.A(obj.m.cl'), obj.m.JIT, ti, x, y);
-            else
-                error('Wrong element type');
-            end
-
-            Az(index) = NaN;
-
-            if iscolumn(Az), Az = Az'; end
-
-        end
-
-        % get x- and y-components of a field quantity: B, BSmooth, H, HSmooth
-        function [FQx, FQy] = getFQxFQyOnPointsTL3(obj, x, y, fieldQuantity)
-
-            % find index of triangle containing the (x,y) point
-            ti = obj.getPointsLocation(x, y);
-
-            % care points out of the mesh
-            index = isnan(ti);
-            ti(index) = 1;
-
-            switch fieldQuantity
-
-                case 'B'
-                    FQx = obj.results.Bxg(ti);
-                    FQy = obj.results.Byg(ti);
-
-                case 'BSmooth'
-                    [FQx, FQy] = emdlab_m2d_tl3_interpFQSmooth(obj.m.cl, obj.m.nodes, obj.results.Bxn, obj.results.Byn, obj.m.JIT, ti, x, y);
-
-                case 'H'
-                    FQx = obj.results.Hxg(ti);
-                    FQy = obj.results.Hyg(ti);
-
-                case 'HSmooth'
-                    [FQx, FQy] = emdlab_m2d_tl3_interpFQSmooth(obj.m.cl, obj.m.nodes, obj.results.Hxn, obj.results.Hyn, obj.m.JIT, ti, x, y);
-
-                otherwise
-                    error('Wrong field quantity.');
-            end
-
-            FQx(index) = NaN;
-            FQy(index) = NaN;
-
-            if iscolumn(FQx), FQx = FQx'; end
-            if iscolumn(FQy), FQy = FQy'; end
-
-        end
-
-        function [FQx, FQy] = getFQxFQyOnPointsTL6(obj, x, y, fieldQuantity)
+        % get x- and y-components of a field quantity: B or H
+        function [FQx, FQy] = getFQxFQyOnPoints(obj, x, y, fieldQuantity)
 
             % find index of triangle containing the (x,y) point
             ti = obj.getPointsLocation(x, y);
@@ -1870,10 +1309,10 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                     [FQx, FQy] = emdlab_m2d_tl6_interpBSmooth(obj.m.cl, obj.m.nodes, obj.results.BxnSmooth, obj.results.BynSmooth, obj.m.JIT, ti, x, y);
 
                 case 'H'
-                    [FQx, FQy] = emdlab_m2d_tl6_interpBSmooth(obj.m.cl, obj.m.nodes, obj.results.Hxn, obj.results.Hyn, obj.m.JIT, ti, x, y);
+                    [FQx, FQy] = emdlab_m2d_tl6_interpB(obj.m.cl, obj.m.nodes, obj.results.A, obj.m.JIT, ti, x, y);
 
                 case 'HSmooth'
-                    [FQx, FQy] = emdlab_m2d_tl6_interpBSmooth(obj.m.cl, obj.m.nodes, obj.results.Hxn, obj.results.Hyn, obj.m.JIT, ti, x, y);
+                    [FQx, FQy] = emdlab_m2d_tl6_interpBSmooth(obj.m.cl, obj.m.nodes, obj.results.Bxn, obj.results.Byn, obj.m.JIT, ti, x, y);
 
                 otherwise
                     error('Wrong field quantity.');
@@ -1887,16 +1326,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        function [FQx, FQy] = getFQxFQyOnPoints(obj, x, y, fieldQuantity)
-            if obj.m.isTL3
-                [FQx, FQy] = obj.getFQxFQyOnPointsTL3(x, y, fieldQuantity);
-            elseif obj.m.isTL6
-                [FQx, FQy] = obj.getFQxFQyOnPointsTL6(x, y, fieldQuantity);
-            else
-                error('Wrong element type');
-            end
-        end
-
         % get the value of Bx and By on specified points
         function [Bx, By] = getBxByOnPoints(obj, x, y, smoothFlag)
 
@@ -1904,9 +1333,9 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             if nargin < 4, smoothFlag = true; end
 
             if smoothFlag
-                [Bx, By] = getFQxFQyOnPoints(obj, x, y, 'BSmooth');
+                [Bx, By] = getFQxByFQnPoints(obj, x, y, 'BSmooth');
             else
-                [Bx, By] = getFQxFQyOnPoints(obj, x, y, 'B');
+                [Bx, By] = getFQxByFQnPoints(obj, x, y, 'B');
             end
 
         end
@@ -1925,7 +1354,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % get x- and y-components of a field quantity on a segment
+        % get the value of Bx and By on points that are on a segment
         function [FQx, FQy, x, y] = getFQxFQyOnSegment(obj, x1, y1, x2, y2, N, fieldQuantity)
 
             % sample points
@@ -1944,7 +1373,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % get the value of Hx and Hy on points that are on a segment
+        % get the value of Bx and By on points that are on a segment
         function [Hx, Hy, x, y] = getHxHyOnSegment(obj, x1, y1, x2, y2, N)
 
             % set default value of N
@@ -1953,7 +1382,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % get x- and y-components of a field quantity on a circle
+        % get the value of Bx and By on points that are on a circle
         function [FQx, FQy, x, y] = getFQxFQyOnCircle(obj, xc, yc, r, N, fieldQuantity)
 
             % sample points
@@ -1964,7 +1393,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % get x- and y-components of a field quantity on an arc
+        % get the value of Bx and By on points that are on a circle
         function [FQx, FQy, x, y] = getFQxFQyOnArc(obj, xc, yc, r, theta1, theta2, N, fieldQuantity)
 
             % sample points
@@ -1984,7 +1413,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % get the value of Hx and Hy on points that are on a circle
+        % get the value of Bx and By on points that are on a circle
         function [Hx, Hy, x, y] = getHxHyOnCircle(obj, xc, yc, r, N)
 
             % set default value of N
@@ -2007,7 +1436,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % get the value of FQr and FQt on points that are on a circle
+        % get the value of Br and Bt on points that are on a circle
         function [FQr, FQt, t] = getFQrFQtOnCircle(obj, xc, yc, r, N, fieldQuantity)
 
             [FQx, FQy, x, y] = obj.getFQxFQyOnCircle(xc, yc, r, N, fieldQuantity);
@@ -2026,7 +1455,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % get the value of FQr and FQt on points that are on an arc
+         % get the value of Br and Bt on points that are on a circle
         function [FQr, FQt, t] = getFQrFQtOnArc(obj, xc, yc, r, theta1, theta2, N, fieldQuantity)
 
             [FQx, FQy, x, y] = obj.getFQxFQyOnArc(xc, yc, r, theta1, theta2, N, fieldQuantity);
@@ -2054,7 +1483,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
-        % get the value of Br and Bt on points that are on a circle
+         % get the value of Br and Bt on points that are on a circle
         function [Br, Bt, t] = getBrBtOnArc(obj, xc, yc, r, theta1, theta2, N)
 
             % set default value of N
@@ -2078,11 +1507,7 @@ classdef emdlab_solvers_ms2d_tlcp < handle
     methods
 
         function y = getTotalEnergy(obj)
-            y = obj.evalTotalEnergyCoenergy;
-        end
-
-        function y = getTotalCoenergy(obj)
-            [~,y] = obj.evalTotalEnergyCoenergy;
+            y = obj.evalTotalEnergy;
         end
 
         function y = getDepth(obj)
@@ -2097,73 +1522,49 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             y = mean(y, 2);
         end
 
-        function f = gui(obj)
+        function gui(obj)
 
-            f = figure('Position',[0,0,850,600], 'Visible','off', 'Name', 'https://github.com/EMDLAB-Package/emdlab-win64', 'DockControls', 'off');
+            f = figure('Position',[0,0,800,600], 'Visible','off', 'Name', 'https://github.com/EMDLAB-Package/emdlab-win64', 'DockControls', 'off');
             movegui(f,'center');
-            tgp = uitabgroup(f, 'Tag', 'MainTabGroup');
+            tgp = uitabgroup(f);
 
             t = uitab(tgp,'Title','Geometry');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+            ax = axes(t);
             obj.m.showg(ax);
 
             t = uitab(tgp,'Title','Mesh');
 
             tgp_sub = uitabgroup(t);
 
-            t = uitab(tgp_sub,'Title','Mesh Zones');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+            t = uitab(tgp_sub,'Title','Mesh zones');
+            ax = axes(t);
             obj.m.showmzs(ax);
 
-            t = uitab(tgp_sub,'Title','Global Mesh');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+            t = uitab(tgp_sub,'Title','Global mesh');
+            ax = axes(t);
             obj.m.showm(ax);
 
-            t = uitab(tgp_sub,'Title','Wireframe Mesh');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+            t = uitab(tgp_sub,'Title','Wireframe mesh');
+            ax = axes(t);
             obj.m.showwf(ax);
 
-            t = uitab(tgp_sub,'Title','Free Boundary');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+            t = uitab(tgp_sub,'Title','Free boundary');
+            ax = axes(t);
             obj.m.showfb(ax);
-
-            t = uitab(tgp_sub,'Title','Mesh Information');
-            tbl = uitable(t, 'units', 'normalized', 'position', [0,0,1,1], 'fontSize',12);
-
-            mzNames = obj.m.getMeshZoneNames;
-
-            tbl.ColumnName = {'   Mesh Zone Name   ','   Number of Elements   '};
-            tbl.Data{1,1} = 'All Mesh Zones';
-            tbl.Data{1,2} = obj.m.Ne;
-            for i = 1:obj.m.Nmzs
-                tbl.Data{i+1,1} = char(mzNames(i));
-                tbl.Data{i+1,2} = obj.m.mzs.(mzNames(i)).Ne;
-            end
-            tbl.ColumnWidth = {'auto'};
 
             t = uitab(tgp,'Title','Coils');
             tgp_sub = uitabgroup(t);
 
             t = uitab(tgp_sub,'Title','#All coil arms');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+            ax = axes(t);
             obj.showAllCoilArms(ax);
 
             coilsNames = fieldnames(obj.coils);
             for i = 1:obj.Ncoils
                 t = uitab(tgp_sub,'Title',coilsNames{i});
-                ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+                ax = axes(t);
                 obj.showCoil(coilsNames{i}, ax);
             end
-
-            t = uitab(tgp_sub,'Title','Flux Linkages');
-            tbl = uitable(t, 'units', 'normalized', 'position', [0,0,1,1], 'fontSize',12);
-
-            tbl.ColumnName = {'   Coil Name   ','   Flux Linkage [Wb]   '};
-            for i = 1:obj.Ncoils
-                tbl.Data{i,1} = coilsNames{i};
-                tbl.Data{i,2} = obj.evalCoilFluxLinkage(coilsNames{i});
-            end
-            tbl.ColumnWidth = {'auto'};
 
             t = uitab(tgp,'Title','Boundary Conditions');
             tgp_sub = uitabgroup(t);
@@ -2171,21 +1572,21 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             bcNames = fieldnames(obj.bcs.dirichlet);
             for i = 1:numel(bcNames)
                 t = uitab(tgp_sub,'Title','Vector Potential #'+string(i));
-                ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+                ax = axes(t);
                 obj.m.showNodes(ax,obj.bcs.dirichlet.(bcNames{i}).index);
             end
 
             bcNames = fieldnames(obj.bcs.evenPeriodic);
             for i = 1:numel(bcNames)
                 t = uitab(tgp_sub,'Title','Even Periodic #'+string(i));
-                ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+                ax = axes(t);
                 obj.m.showNodes(ax,obj.bcs.evenPeriodic.(bcNames{i}).mIndex, obj.bcs.evenPeriodic.(bcNames{i}).sIndex);
             end
 
             bcNames = fieldnames(obj.bcs.oddPeriodic);
             for i = 1:numel(bcNames)
                 t = uitab(tgp_sub,'Title','Odd Periodic #'+string(i));
-                ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+                ax = axes(t);
                 obj.m.showNodes(ax,obj.bcs.oddPeriodic.(bcNames{i}).mIndex, obj.bcs.oddPeriodic.(bcNames{i}).sIndex);
             end
 
@@ -2194,36 +1595,25 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             tgp_sub = uitabgroup(t);
 
             t = uitab(tgp_sub,'Title','Flux Density');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
-            obj.plotBmag(ax);
-
-            t = uitab(tgp_sub,'Title','Flux Density Smoothed');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
-            obj.plotBmagSmooth(ax);
-
-            t = uitab(tgp_sub,'Title','Flux Lines');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
-            obj.plotFluxLines(ax);
-
-            t = uitab(tgp_sub,'Title','Flux Density & Flux Lines');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
+            ax = axes(t);
             obj.plotBmagFluxLines(ax);
-            colormap(ax,"parula");
-
-            t = uitab(tgp_sub,'Title','Flux Density Field');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
-            obj.plotBvecOnCenterOfElements(ax);
-
-            t = uitab(tgp_sub,'Title','Magnetization');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
-            obj.plotMvecOnCenterOfElements(ax);
 
             t = uitab(tgp_sub,'Title','Vector Potential');
-            ax = axes(t, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');
-            obj.plotAmag(ax);            
+            ax = axes(t);
+            obj.plotAmag(ax);
+
+            t = uitab(tgp_sub,'Title','Flux Lines');
+            ax = axes(t);
+            obj.plotFluxLines(ax);
+
+            
+
+            set(f,'visible', 'on');
+
+
 
         end
-
+        
     end
 
     methods (Access = protected)
