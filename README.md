@@ -10,7 +10,7 @@ Its open-source nature encourages collaboration and facilitates easy extension o
 
 The package is organized as a library of MATLAB objects. Depending on your specific design needs, 
 you can select the appropriate modules to obtain your desired results. With EMDLAB, 
-you can also develop customized standalone software tailored to your applications.
+you can also develop customized, standalone software tailored to your applications.
 
 ### Setup Instructions (Windows 64-bit):
 
@@ -27,3 +27,11 @@ https://youtu.be/ifwybm4r2_0
 
 **Preprint paper:**
 https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5327716
+
+### How to use Gmsh as a mesh generator in EMDLAB:
+
+✅ 1) Install Python.
+
+✅ 2) Install Gmsh -> you can use: pip install gmsh
+
+✅ 3) Set python.exe path in the pyPath.txt file located in "C:\emdlab-win64\geometry\pyPath.txt"
