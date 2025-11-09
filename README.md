@@ -35,3 +35,5 @@ https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5327716
 ✅ 2) Install Gmsh -> you can use: pip install gmsh
 
 ✅ 3) Set python.exe path in the pyPath.txt file located in "C:\emdlab-win64\geometry\pyPath.txt"
+
+✅ 4) When using the .generateMesh method, use 'gmsh' as input: **.generateMesh('gmsh')**
