@@ -25,8 +25,8 @@ you can also develop customized, standalone software tailored to your applicatio
 **How to install EMDLAB from GitHub? (Follow the video link):**
 https://youtu.be/ifwybm4r2_0
 
-**Preprint paper:**
-https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5327716
+**For academic use, cite this paper:**
+https://www.sciencedirect.com/science/article/pii/S2352711025004121
 
 ### How to use Gmsh as a mesh generator in EMDLAB:
 In addition to the built-in EMDLAB mesh generators, it is also possible to use Gmsh as an external mesh generator.
