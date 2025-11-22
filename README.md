@@ -25,13 +25,16 @@ you can also develop customized, standalone software tailored to your applicatio
 **How to install EMDLAB from GitHub? (Follow the video link):**
 https://youtu.be/ifwybm4r2_0
 
-**Preprint paper:**
-https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5327716
+**For academic use, cite this paper:**
+https://www.sciencedirect.com/science/article/pii/S2352711025004121
 
 ### How to use Gmsh as a mesh generator in EMDLAB:
+In addition to the built-in EMDLAB mesh generators, it is also possible to use Gmsh as an external mesh generator.
 
 ✅ 1) Install Python.
 
 ✅ 2) Install Gmsh -> you can use: pip install gmsh
 
 ✅ 3) Set python.exe path in the pyPath.txt file located in "C:\emdlab-win64\geometry\pyPath.txt"
+
+✅ 4) When using the .generateMesh method, use 'gmsh' as input: **.generateMesh('gmsh')**
