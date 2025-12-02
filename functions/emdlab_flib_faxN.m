@@ -19,8 +19,8 @@ switch numel(varargin)
             f = ax.Parent;
             N = 12;
 
-        elseif isscalar(varargin{1}) && isinteger(varargin{1}) && varargin{1}>0
-            N = varargin{1};
+        elseif isscalar(varargin{1}) && varargin{1}>0
+            N = ceil(varargin{1});
             f = figure('color', [0.9,0.9,0.9], 'position', [0,0,800,600], 'Visible','off');
             movegui(f, 'center');
             ax = axes(f, 'FontName', 'Helvetica', 'FontSize', 14, 'FontWeight', 'normal');

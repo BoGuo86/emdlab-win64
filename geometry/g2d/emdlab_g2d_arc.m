@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % two-dimensional arc class
 
 classdef emdlab_g2d_arc < handle & emdlab_g2d_constants

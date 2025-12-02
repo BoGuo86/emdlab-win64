@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 classdef emdlab_phy_materialProperty
     
     properties

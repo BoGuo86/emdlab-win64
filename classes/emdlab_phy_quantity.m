@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratorys
 classdef emdlab_phy_quantity < handle
     
     properties (SetAccess = private)

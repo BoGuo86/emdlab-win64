@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % all material properties must be in SI units
 
 classdef emdlab_phy_material < handle

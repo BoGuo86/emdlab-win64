@@ -1,6 +1,6 @@
 % two dimensional nonlinear magnetic-static solver
 % nonlinear solver: Newton-Raphson
-% first order triangular mesh
+% second order triangular mesh
 % triangular lagrangian elements: 6 points per element
 % isotropic
 % homogenous

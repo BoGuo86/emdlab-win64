@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % stator tooth & coil
 
 function emdlab_g2d_lib_tc1(g, ISD, OSD, Ns, wst, dss, bs0, hs0, tta, name1, name2, name3)

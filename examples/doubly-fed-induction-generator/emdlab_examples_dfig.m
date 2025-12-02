@@ -1,0 +1,117 @@
+% initialization
+clc;
+clear;
+close all;
+addpath(genpath('C:\emdlab-win64'));
+% design variables [mm]
+gv_ISD = 175;
+gv_OSD = 270;
+gv_Lstk = 190;
+gv_g = 0.635;
+gv_Dsh = 70;
+gv_Ns = 48;
+gv_Nr = 36;
+gv_wss = 3;
+gv_dss = 23;
+gv_wrt = 4;
+gv_drs = 10;
+gv_Ntcp = 10;
+gv_Ntcc = 20;
+gv_Iph = 7;
+% define geometry data base
+g = emdlab_g2d_db;
+% mesh density function
+f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2-gv_g,gv_OSD/2], [3,0.3,3]*2, r, 'linear','extrap');
+emdlab_g2d_lib_tc9(g,gv_ISD,gv_OSD,gv_Ns,4,3.5,5,1.5,1,15,0.5,0.5,'stator','sc','sap');
+emdlab_g2d_lib_tc10(g,gv_Dsh,gv_ISD-2*gv_g,gv_Nr,1,3.5,10,1.5,2,15,0.5,0.5,'rotor','rb','rap');
+g.setMeshLengthByRadialFunction(f_mesh)
+m = g.generateMesh('mg0');
+% add materials
+m.addMaterial('m330', emdlab_mlib_es_M300_35A);
+m.addMaterial('copper', emdlab_mlib_copper);
+% set materials
+m.setMaterial('rotor','m330');
+m.setMaterial('stator','m330');
+% generate full mesh
+m.aux_cmxjcrj('stator',gv_Ns);
+m.aux_cmxjcrj('sap',gv_Ns);
+for i = 1:4
+m.aux_cmxjcr('sc'+string(i),gv_Ns);
+end
+m.aux_cmxjcrj('rotor',gv_Nr);
+m.aux_cmxjcrj('rap',gv_Nr);
+for i = 1:1
+m.aux_cmxjcr('rb'+string(i),gv_Nr);
+end
+% add circular air gap
+m.aux_addCircularAirGap('ag',0,0,gv_ISD/2-gv_g,0,0,gv_ISD/2,2);
+% getting an instance of solver object
+s = emdlab_solvers_ms2d_tl3_ihnl(m);
+s.setLengthUnit('mm');
+s.setDepth(gv_Lstk);
+% define windings
+s.defineCoil('phaseAP');
+s.defineCoil('phaseBP');
+s.defineCoil('phaseCP');
+s.defineCoil('phaseAC');
+s.defineCoil('phaseBC');
+s.defineCoil('phaseCC');
+% index of each coil assocciating with each winding
+pA = [1,2,3,4,13,14,15,16]; pA = [pA, pA+24];
+ntc = gv_Ntcp*[-1,-1,-1,-1,1,1,1,1]; ntc = [ntc,ntc];
+pB = pA + 8;
+pC = pA + 4;
+% assingation of mesh zones to windings
+s.addMeshZones2Coil('phaseAP', 'sc4'+string(pA), ntc, 1);
+s.addMeshZones2Coil('phaseBP', 'sc4'+string(pB), ntc, 1);
+s.addMeshZones2Coil('phaseCP', 'sc4'+string(pC), -ntc, 1);
+% index of each coil assocciating with each winding
+pA = [1,2,3,4,13,14,15,16]-2; pA = [pA, pA+24];
+ntc = gv_Ntcp*[-1,-1,-1,-1,1,1,1,1]; ntc = [ntc,ntc];
+pB = pA + 8;
+pC = pA + 4;
+index=pA<=0;pA(index)=pA(index)+48;
+% assingation of mesh zones to windings
+s.addMeshZones2Coil('phaseAP', 'sc3'+string(pA), ntc, 1);
+s.addMeshZones2Coil('phaseBP', 'sc3'+string(pB), ntc, 1);
+s.addMeshZones2Coil('phaseCP', 'sc3'+string(pC), -ntc, 1);
+% index of each coil assocciating with each winding
+pAn = [1,2]; pAn = [pAn, pAn+12, pAn+24, pAn+36];
+pA = [7,8]; pA = [pA, pA+12, pA+24, pA+36];
+pBp = pA + 4;
+pBn = pAn + 4;
+pCp = pAn + 2;
+pCn = pA + 2;
+% assingation of mesh zones to windings
+s.addMeshZone2Coil('phaseAC', 'sc2'+string(pA), gv_Ntcc, 1);
+s.addMeshZone2Coil('phaseAC', 'sc2'+string(pAn), gv_Ntcc, -1);
+s.addMeshZone2Coil('phaseBC', 'sc2'+string(pBp), gv_Ntcc, 1);
+s.addMeshZone2Coil('phaseBC', 'sc2'+string(pBn), gv_Ntcc, -1);
+s.addMeshZone2Coil('phaseCC', 'sc2'+string(pCp), gv_Ntcc, 1);
+s.addMeshZone2Coil('phaseCC', 'sc2'+string(pCn), gv_Ntcc, -1);
+% index of each coil assocciating with each winding
+pAn = [1,2]-1; pAn = [pAn, pAn+12, pAn+24, pAn+36];
+pA = [7,8]-1; pA = [pA, pA+12, pA+24, pA+36];
+pBp = pA + 4;
+pBn = pAn + 4;
+pCp = pAn + 2;
+pCn = pA + 2;
+index=pAn<=0;pAn(index)=pAn(index)+48;
+% assingation of mesh zones to windings
+s.addMeshZone2Coil('phaseAC', 'sc1'+string(pA), gv_Ntcc, 1);
+s.addMeshZone2Coil('phaseAC', 'sc1'+string(pAn), gv_Ntcc, -1);
+s.addMeshZone2Coil('phaseBC', 'sc1'+string(pBp), gv_Ntcc, 1);
+s.addMeshZone2Coil('phaseBC', 'sc1'+string(pBn), gv_Ntcc, -1);
+s.addMeshZone2Coil('phaseCC', 'sc1'+string(pCp), gv_Ntcc, 1);
+s.addMeshZone2Coil('phaseCC', 'sc1'+string(pCn), gv_Ntcc, -1);
+% set phase currents
+s.setCoilCurrent('phaseAC', gv_Iph*1.41);
+s.setCoilCurrent('phaseBC', -gv_Iph*1.41/2);
+s.setCoilCurrent('phaseCC', -gv_Iph*1.41/2);
+% apply boundary conditions
+s.setAzBC(m.getfbn, 0);
+% solve and plot results
+s.setSolverRelativeError(1e-4);
+s.solve
+s.gui;
+s.plotBrBtOnCircle(0, 0, gv_ISD/2-gv_g/2, 1000);

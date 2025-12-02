@@ -88,6 +88,8 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         function obj = emdlab_m2d_tmz(cl, nodes)
             if nargin < 2, error('Not enough input arguments.'); end
             if nargin > 2, error('Too many input arguments.'); end
+
+%             if isempty(cl) && isempty
             obj.nodes = nodes;
             obj.cl = cl;
             obj.setdata;

@@ -21,7 +21,7 @@ rotorPosition = -5;
 % define geometry data base
 g = emdlab_g2d_db;
 % mesh density function
-f_mesh = @(r) interp1([gv_ISD/2,gv_OSD/2,gv_ORD/2], [1.5,0.4,1.5], r, 'linear','extrap');
+f_mesh = @(r) interp1([gv_ISD/2,gv_OSD/2,gv_ORD/2], [3,0.4,3], r, 'linear','extrap');
 % add geometry from library
 emdlab_g2d_lib_tc_srm1(g, gv_OSD+2*gv_g, gv_ORD, gv_Nr, gv_gbetar, gv_gwsy, 'rotor', 'rap');
 emdlab_g2d_lib_tc_srm2(g, gv_ISD, gv_OSD, gv_Ns, gv_gbetas, gv_gwsy, 'stator', 'sca');

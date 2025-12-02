@@ -96,7 +96,7 @@ m.rotateMeshZone('RotorAP', rotorPosition*pi/180);
 % generate air gap mesh
 m.aux_addArcAirGap('ag',0,0,gv_ISD/2-gv_gap,gv_ISD/2,2)
 % getting an instance of solver object
-s = emdlab_solvers_ms2d_tl6_ihnl(m);
+s = emdlab_solvers_ms2d_tl3_ihnl(m);
 s.setLengthUnit('mm');
 s.setDepth(70);
 % define new winding

@@ -14,7 +14,7 @@ gv_beta_r = 34.2 * pi/180;
 gv_beta_s = 30 * pi/180;
 gv_wry = 10.42;
 gv_wsy = 10;
-rotorPosition = -20;
+rotorPosition = 0;
 % dependent variables
 gv_wrt = 2 * (gv_ISD/2-gv_gap) * sin(gv_beta_r/2);
 gv_gammar = asin(gv_wrt*0.5/(gv_Dsh/2+gv_wry));

@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 classdef emdlab_bcs_scalar < handle
     
     % structures for stroing boundary conditions data

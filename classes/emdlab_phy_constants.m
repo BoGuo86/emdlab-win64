@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % physical constants
 
 classdef emdlab_phy_constants

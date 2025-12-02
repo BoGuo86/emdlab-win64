@@ -2427,6 +2427,7 @@ classdef emdlab_m2d_tmdb < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         end
 
         function aux_cmxjcr(obj, mzName, varargin)
+            mzName = char(mzName);
             newNames = obj.aux_cmcr(mzName, [1,0], varargin{:});
             for i = 1:(numel(newNames)/2)
                 newName = char(mzName + string(i));

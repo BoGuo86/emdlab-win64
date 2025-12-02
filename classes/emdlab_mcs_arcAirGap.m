@@ -1,4 +1,4 @@
-% developer: https://ComProgExpert.com, Ali Jamali-Fard
+% EMDLAB: Electrical Machines Design Laboratory
 % moving contacts
 % arc air gap: two concentric arcs
 

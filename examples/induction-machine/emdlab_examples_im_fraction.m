@@ -65,19 +65,14 @@ s.defineCoil('phaseA');
 s.defineCoil('phaseB');
 s.defineCoil('phaseC');
 % index of each coil assocciating with each winding
-pAn = [1,2,3];
-pAp = [10,11,12];
-pBp = pAp + 6;
-pBn = pAn + 6;
-pCp = pAn + 3;
-pCn = pAp + 3;
+pA = [1,2,3,10,11,12];
+ntc = gv_Ntc*[-1,-1,-1,1,1,1];
+pB = pA + 6;
+pC = pA + 3;
 % assingation of mesh zones to windings
-s.addMeshZone2Coil('phaseA', 'sc'+string(pAp), gv_Ntc, 1);
-s.addMeshZone2Coil('phaseA', 'sc'+string(pAn), gv_Ntc, -1);
-s.addMeshZone2Coil('phaseB', 'sc'+string(pBp), gv_Ntc, 1);
-s.addMeshZone2Coil('phaseB', 'sc'+string(pBn), gv_Ntc, -1);
-s.addMeshZone2Coil('phaseC', 'sc'+string(pCp), gv_Ntc, 1);
-s.addMeshZone2Coil('phaseC', 'sc'+string(pCn), gv_Ntc, -1);
+s.addMeshZones2Coil('phaseA', 'sc' + string(pA), ntc, 0.15);
+s.addMeshZones2Coil('phaseB', 'sc' + string(pB), ntc, 0.15);
+s.addMeshZones2Coil('phaseC', 'sc' + string(pC), -ntc, 0.15);
 % set phase currents
 s.setCoilCurrent('phaseA', gv_Iph*1.41);
 s.setCoilCurrent('phaseB', -gv_Iph*1.41/2);

@@ -177,7 +177,34 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
             % loop over mesh zone names vector
             mzName = string(mzName);
-            for i = 1:numel(mzName)
+            Nmzs = numel(mzName);
+
+            if isscalar(turns)
+                turns = turns*ones(1,Nmzs);
+            else
+                if length(turns) ~= Nmzs
+                    error('Length of <turns> array must be the same as the number of mesh zones.');
+                end
+            end
+
+            if isscalar(direction)
+                direction = direction*ones(1,Nmzs);
+            else
+                if length(direction) ~= Nmzs
+                    error('Length of <direction> array must be the same as the number of mesh zones.');
+                end
+            end
+
+            if isscalar(kfill)
+                kfill = kfill*ones(1,Nmzs);
+            else
+                if length(kfill) ~= Nmzs
+                    error('Length of <kfill> array must be the same as the number of mesh zones.');
+                end
+            end
+
+            for i = 1:Nmzs
+                
                 mzName(i) = obj.m.checkMeshZoneExistence(mzName(i));
 
                 if obj.m.mzs.(mzName(i)).props.isCoilArm
@@ -187,18 +214,77 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                 % get coil pointer
                 cptr = obj.coils.(coilName);
 
-                if ~ismember(direction, [-1,1])
+                if ~ismember(direction(i), [-1,1])
                     error('The coil arm reference direction must be <1> or <-1>.');
                 end
 
-                if kfill > 1
-                    error('The coil fill factor must be lower than or equal to one.');
+                if (kfill(i) < 0) || (kfill(i) > 1)
+                    error('The coil fill factor must between zero to one.');
+                end
+
+                cptr.addCoilArm(mzName(i), direction(i));
+                obj.m.mzs.(mzName(i)).props.turns = turns(i);
+                obj.m.mzs.(mzName(i)).props.direction = direction(i);
+                obj.m.mzs.(mzName(i)).props.kfill = kfill(i);
+                obj.m.mzs.(mzName(i)).props.isCoilArm = true;
+                obj.coilArms(end+1) = mzName(i);
+                obj.m.mzs.(mzName(i)).props.cai = obj.NcoilArms;
+
+            end
+
+        end
+
+        % this function add a number of mesh zones to a coil and make it as a coil arm
+        function addMeshZones2Coil(obj, coilName, mzName, turns, kfill)
+
+            % default arguments
+            if nargin < 4, turns = 1; end
+            if nargin < 5, kfill = 1; end
+
+            coilName = obj.checkCoilExistence(coilName);
+
+            % loop over mesh zone names vector
+            mzName = string(mzName);
+            Nmzs = numel(mzName);
+
+            if isscalar(turns)
+                turns = turns*ones(1,Nmzs);
+            else
+                if length(turns) ~= Nmzs
+                    error('Length of <turns> array must be the same as the number of mesh zones.');
+                end
+            end
+
+            if isscalar(kfill)
+                kfill = kfill*ones(1,Nmzs);
+            else
+                if length(kfill) ~= Nmzs
+                    error('Length of <kfill> array must be the same as the number of mesh zones.');
+                end
+            end
+
+            for i = 1:Nmzs
+                
+                mzName(i) = obj.m.checkMeshZoneExistence(mzName(i));
+
+                if obj.m.mzs.(mzName(i)).props.isCoilArm
+                    error('Specified mesh zone is already defined as a coil arm.');
+                end
+
+                % get coil pointer
+                cptr = obj.coils.(coilName);
+
+                direction = 1;
+                if turns(i)<0, direction = -1; end
+
+                if (kfill(i) < 0) || (kfill(i) > 1)
+                    error('The coil fill factor must between zero to one.');
                 end
 
                 cptr.addCoilArm(mzName(i), direction);
-                obj.m.mzs.(mzName(i)).props.turns = turns;
+                obj.m.mzs.(mzName(i)).props.turns = abs(turns(i));
                 obj.m.mzs.(mzName(i)).props.direction = direction;
-                obj.m.mzs.(mzName(i)).props.kfill = kfill;
+                obj.m.mzs.(mzName(i)).props.kfill = kfill(i);
                 obj.m.mzs.(mzName(i)).props.isCoilArm = true;
                 obj.coilArms(end+1) = mzName(i);
                 obj.m.mzs.(mzName(i)).props.cai = obj.NcoilArms;
@@ -291,6 +377,10 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                     mzColor = 'b';
                 else
                     mzColor = 'r';
+                end
+
+                if mzptr.props.turns == 0
+                    mzColor = [0.8,0.8,0.8];
                 end
 
                 patch('Faces', mzptr.cl, 'Vertices', mzptr.nodes, ...
