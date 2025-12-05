@@ -1,5 +1,5 @@
-% developer: https://ComProgExpert.com
-% data base class for 2D geometries
+% EMDLAB: Electrical Machines Design Laboratory
+% data base class for 2d geometries
 
 classdef emdlab_g2d_db < handle
 
@@ -954,10 +954,13 @@ classdef emdlab_g2d_db < handle
 
         %% visualization methos
         % show the geometry sketch
-        function varargout = showSketch(obj, showTags)
+        function varargout = showSketch(obj, showTags, showWFM)
 
             if nargin<2
                 showTags = true;
+                showWFM = false;
+            elseif nargin<3
+                showWFM = false;
             end
 
             f = figure('NumberTitle', 'on', 'WindowState', 'maximized', 'name', 'EMDLAB Geometry Visualization', 'color', [0.9,0.9,0.9]);
@@ -1008,13 +1011,16 @@ classdef emdlab_g2d_db < handle
             if ~isempty(v)
                 patch('faces', cl, 'vertices', v, 'edgecolor', 'b', 'linewidth',1.2);
                 if showTags
-                    plot(v(:,1), v(:,2), '.', 'color', 'k');
+                    
                     edgeTags = cell(1,Ne);
                     for i = 1:Ne
                         edgeTags{i} = obj.edges(i).tag;
                     end
                     text(c(:,1), c(:,2), edgeTags, 'BackgroundColor', 'w', ...
                         'HorizontalAlignment','center','VerticalAlignment','middle');
+                end
+                if showWFM
+                    plot(v(:,1), v(:,2), 'o', 'color', 'k', 'markersize',5, 'markerfacecolor','k');
                 end
             end
 
