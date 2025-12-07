@@ -1,5 +1,5 @@
 % EMDLAB: Electrical Machines Design Laboratory
-% 2D segment class
+% 2D ray class
 
 classdef emdlab_g2d_ray < handle
 

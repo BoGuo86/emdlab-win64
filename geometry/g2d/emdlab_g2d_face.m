@@ -1,5 +1,5 @@
-% developer: https://ComProgExpert.com
-% face class for 2D geometries
+% EMDLAB: Electrical Machines Design Laboratory
+% face class for 2d geometries
 % a face consists several loops, the first loop is outer loop and the rests
 % are inner loops
 

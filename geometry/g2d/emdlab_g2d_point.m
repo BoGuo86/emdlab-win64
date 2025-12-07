@@ -1,4 +1,5 @@
-% two-dimensional point class
+% EMDLAB: Electrical Machines Design Laboratory
+% 2d point class
 
 classdef emdlab_g2d_point  < handle & matlab.mixin.Copyable & emdlab_g2d_constants
 
@@ -14,7 +15,7 @@ classdef emdlab_g2d_point  < handle & matlab.mixin.Copyable & emdlab_g2d_constan
         % tag of edges that used this point for their constrcution
         tags (1,:) string;
 
-        % mesh size
+        % mesh size: mesh size at this point, imporant in Gmsh
         meshSize (1,1) double = 1;
 
     end
@@ -166,6 +167,14 @@ classdef emdlab_g2d_point  < handle & matlab.mixin.Copyable & emdlab_g2d_constan
         end
 
         function setSignedDistanceFromLine(obj, l, d)
+
+            u12 = obj - l.p0;
+            vp = l.u.dot(u12) * l.u;
+            vn = u12 - vp;
+            vn.normalize;
+            newPoint = l.p0 + vp + d*vn;
+            obj.setCoordinates(newPoint.x, newPoint.y);
+
         end
 
         %% inner and outer products

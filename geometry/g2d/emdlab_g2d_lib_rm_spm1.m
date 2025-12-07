@@ -52,15 +52,17 @@ e8 = g.addArc(o,p4,p7,1);
 e9 = g.addArc(o,p3,p5,1);
 e10 = g.addArc(o,p5,p8,1);
 
+% add loops
 l1 = g.addLoop(e1,e7,e8,-e4,-e6);
 l2 = g.addLoop(e2,e9,-e3,-e7);
 l3 = g.addLoop(e3,e10,-e5,-e8);
 
+% add faces
 g.addFace(name1, l1);
 g.addFace(name2, l2);
 g.addFace(name3, l3);
 
-% set mesh zone colors
+% set face colors
 g.setFaceColor(name1,200,200,200)
 g.setFaceColor(name2,28,255,28)
 g.setFaceColor(name3,0,255,255)

@@ -1,5 +1,5 @@
-% developer: https://ComProgExpert.com
-% loop class for 2D geometries
+% EMDLAB: Electrical Machines Design Laboratory
+% loop class for 2d geometries
 % loop is a sequence of edges, which is alway counterclockwise
 
 classdef emdlab_g2d_loop < handle

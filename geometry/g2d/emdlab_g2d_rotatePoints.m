@@ -1,4 +1,4 @@
-% developer: https://ComProgExpert.com
+% EMDLAB: Electrical Machines Design Laboratory
 % rotate points on x-y plane
 % p is a matrix [Np x 2]
 % rotAngle: is the amount of rotation [rad]

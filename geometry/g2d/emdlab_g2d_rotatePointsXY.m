@@ -1,4 +1,4 @@
-% developer: https://ComProgExpert.com
+% EMDLAB: Electrical Machines Design Laboratory
 % rotate points on x-y plane
 % rotAngle: is the amount of rotation [rad]
 % xc, yc: center point of the rotation

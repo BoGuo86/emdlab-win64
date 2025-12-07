@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % 2d spline class
 
 classdef emdlab_g2d_spline < handle

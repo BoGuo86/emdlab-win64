@@ -1,5 +1,5 @@
-% developer: https://ComProgExpert.com, Ali Jamali-Fard
-% 2D segment class
+% EMDLAB: Electrical Machines Design Laboratory
+% 2d infinite line class
 
 classdef emdlab_g2d_line < handle
 
@@ -8,7 +8,7 @@ classdef emdlab_g2d_line < handle
         % a point on the line
         p0 (1,1) emdlab_g2d_point = emdlab_g2d_point(0,0);
 
-        % line direction vector
+        % unit vector that specifies line direction
         u (1,1) emdlab_g2d_point = emdlab_g2d_point(1,0);
 
     end
@@ -17,9 +17,12 @@ classdef emdlab_g2d_line < handle
         %% constructor and destructor
         function obj = emdlab_g2d_line(varargin)
 
-            if nargin
+            if nargin == 2
                 obj.p0 = varargin{1};
                 obj.u = varargin{2};
+            elseif nargin == 4
+                obj.p0 = emdlab_g2d_point(varargin{1},varargin{2});
+                obj.u = emdlab_g2d_point(varargin{3},varargin{4});
                 obj.u.normalize;
             end
 

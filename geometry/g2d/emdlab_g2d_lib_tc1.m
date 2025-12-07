@@ -21,6 +21,11 @@ arguments
 
 end
 
+% check unfeasible geometries
+if (ISD/2+dss) > OSD/2
+    error('OD/2 must be higher than (ID/2+ds)');
+end
+
 gamma_so = 2*asin(bs0/ISD);
 alpha_s = 2*pi/Ns;
 tta = tta * pi/180;

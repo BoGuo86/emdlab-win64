@@ -17,9 +17,11 @@ classdef emdlab_g2d_db < handle
         % faces
         faces (1,:) emdlab_g2d_face;
 
+    end
+
+    properties (SetAccess=protected)
         % python path
         pyPath = "";
-
     end
 
     methods
@@ -36,6 +38,14 @@ classdef emdlab_g2d_db < handle
                 fclose(fid);
             end
 
+        end
+
+        function setPyPath(obj, filePath)
+            if ~isfile(filePath)
+                error('There is no file in specified path.');
+            end
+            obj.pyPath = string(filePath);
+            obj.pyPath = replace(obj.pyPath, '\', '\\');
         end
 
         %% point methods
@@ -470,6 +480,35 @@ classdef emdlab_g2d_db < handle
 
         end
 
+        function varargout = extendSegmentBySegmentUpToPoint(obj, eIndex, x, y, seIndex)
+
+            % set default start/end index as end
+            if nargin < 5, seIndex = 1; end
+
+            % get segment edge handle
+            edgeHandle = obj.edges(eIndex).ptr;
+
+            % check start or index: 0 when we exten inward, 0: outward extension
+            if seIndex == 0
+                v2 = edgeHandle.p0.getVector;
+                v1 = [x,y];
+            else
+                v1 = edgeHandle.p1.getVector;
+                v2 = [x,y];
+            end
+
+            if nargout == 0
+                obj.addSegmentByCoordinates(v1(1),v1(2),v2(1),v2(2));
+            elseif nargout == 1
+                varargout{1} = obj.addSegmentByCoordinates(v1(1),v1(2),v2(1),v2(2));
+            elseif nargout == 2
+                [varargout{1},varargout{2}] = obj.addSegmentByCoordinates(v1(1),v1(2),v2(1),v2(2));
+            elseif nargout > 2
+                error('The number of output arguments is too high.');
+            end
+
+        end
+
         function varargout = extendSegmentBySegment(obj, eIndex, extAngle, extAmplitude, seIndex)
 
             % set default start/end index as end
@@ -715,9 +754,9 @@ classdef emdlab_g2d_db < handle
 
             % check start or end point of the segment for extension
             if seIndex == 0
-                v1 = edgeHandle.p0.getVector;
-            else
                 v1 = edgeHandle.p1.getVector;
+            else
+                v1 = edgeHandle.p2.getVector;
             end
 
             v2 = emdlab_g2d_rotatePoints(v1, extAngle, xc, yc);
@@ -924,6 +963,10 @@ classdef emdlab_g2d_db < handle
 
         function setFaceColor(obj, faceTag, R, G, B)
             obj.faces(obj.getFaceIndexByTag(faceTag)).color = [R,G,B]/255;
+        end
+
+        %% intersection methods
+        function p = getIntersectionLineLine(x1,y1,x2,y2,x3,y3,x4,y4)
         end
 
         %% mesh generation methods
@@ -1420,7 +1463,15 @@ classdef emdlab_g2d_db < handle
             % run gmsh via matlab            
             pyCodePath = "C:\\emdlab-win64\\py-files\\gmsh\\emdlab_gmsh_runGeoSaveMsh2D.py";
 
-            [~,~] = system(char('"' + obj.pyPath + '"' + " " + '"' + pyCodePath+ '"'));
+            [status ,~] = system(char('"' + obj.pyPath + '"' + " " + '"' + pyCodePath+ '"'));
+
+            % check for system error
+            if status ~= 0
+                error(['EMDLAB cannot communicate with Gmsh. Please check:\n' ...
+                    '1) You have installed Python.\n' ...
+                    '2) You have installed Gmsh via: pip install gmsh\n' ...
+                    '3) You have set pyPath correctly.\n']);
+            end
 
             % read generated mesh;
             emdlab_gmsh_mshFile;
@@ -1470,11 +1521,18 @@ classdef emdlab_g2d_db < handle
             % run gmsh via matlab            
             pyCodePath = "C:\\emdlab-win64\\py-files\\emdlab_gmsh_runGeoSaveStep.py";
 
-            [~,~] = system(char('"' + obj.pyPath + '"' + " " + '"' + pyCodePath+ '"'));
+            [status,~] = system(char('"' + obj.pyPath + '"' + " " + '"' + pyCodePath+ '"'));
+
+            % check for system error
+            if status ~= 0
+                error(['EMDLAB cannot communicate with Gmsh. Please check:\n' ...
+                    '1) You have installed Python.\n' ...
+                    '2) You have installed Gmsh via: pip install gmsh\n' ...
+                    '3) You have set pyPath correctly.\n']);
+            end
 
             stpPath = "C:\emdlab-win64\geometry\step\emdlab_g3d_stepFile.step";
             copyfile(stpPath, cd + "\" + string(faceName) + ".step")
-
 
         end
 

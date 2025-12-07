@@ -1,3 +1,6 @@
+% EMDLAB: Electrical Machines Design Laboratory
+% location of a point with respect to 2d edge geometries
+
 classdef emdlab_g2d_location
     enumeration
         % location of a point with respect to a segment
