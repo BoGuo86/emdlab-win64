@@ -31,10 +31,8 @@ https://www.sciencedirect.com/science/article/pii/S2352711025004121
 ### How to use Gmsh as a mesh generator in EMDLAB:
 In addition to the built-in EMDLAB mesh generators, it is also possible to use Gmsh as an external mesh generator.
 
-✅ 1) Install Python.
+✅ 1) **Install Python:** In the MATLAB command window, type `>> pyenv` to check whether Python is accessible.
 
-✅ 2) Install Gmsh -> you can use: pip install gmsh
+✅ 2) **Install Gmsh** via cmd window: `pip install gmsh`
 
-✅ 3) Set python.exe path in the pyPath.txt file located in "C:\emdlab-win64\geometry\pyPath.txt"
-
-✅ 4) When using the .generateMesh method, use 'gmsh' as input: **.generateMesh('gmsh')**
+✅ 3) When using the .generateMesh method, use 'gmsh' as input: **.generateMesh('gmsh')**
