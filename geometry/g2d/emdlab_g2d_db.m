@@ -165,6 +165,11 @@ classdef emdlab_g2d_db < handle
 
         end
 
+        function [x,y] = getPointCoordinates(obj, pIndex)
+            x = obj.points(pIndex).x;
+            y = obj.points(pIndex).y;
+        end
+
         function alignPointsAlongYAxis(obj, varargin)
 
             for i = 2:numel(varargin)
@@ -477,6 +482,36 @@ classdef emdlab_g2d_db < handle
             end
 
             error('Edge was not found.');
+
+        end
+
+        function pIndex = getEdgeStartPointIndex(obj, eIndex)
+
+            % pointer to edge
+            eptr = obj.edges(eIndex).ptr;
+            switch class(eptr)
+                case 'emdlab_g2d_segment'
+                    pIndex = obj.getPointIndexByTag(eptr.p0.tag);
+                case 'emdlab_g2d_arc'
+                    pIndex = obj.getPointIndexByTag(eptr.p1.tag);
+                case 'emdlab_g2d_spline'
+                    pIndex = obj.getPointIndexByTag(eptr.pts(1).tag);
+            end
+
+        end
+
+        function pIndex = getEdgeEndPointIndex(obj, eIndex)
+
+            % pointer to edge
+            eptr = obj.edges(eIndex).ptr;
+            switch class(eptr)
+                case 'emdlab_g2d_segment'
+                    pIndex = obj.getPointIndexByTag(eptr.p1.tag);
+                case 'emdlab_g2d_arc'
+                    pIndex = obj.getPointIndexByTag(eptr.p2.tag);
+                case 'emdlab_g2d_spline'
+                    pIndex = obj.getPointIndexByTag(eptr.pts(end).tag);
+            end
 
         end
 
