@@ -29,14 +29,8 @@ classdef emdlab_g2d_db < handle
         function obj = emdlab_g2d_db()
 
             % set python path
-            fid = fopen('c:geometry\pyPath.txt', 'r');
-            if fid<0
-                warning('Cannot set Python path. The file <pyPath.txt> does not exist.');
-            else
-                obj.pyPath = string(fgetl(fid));
-                obj.pyPath = replace(obj.pyPath, '\', '\\');
-                fclose(fid);
-            end
+            p = pyenv;
+            obj.setPyPath(p.Executable);
 
         end
 
@@ -205,6 +199,23 @@ classdef emdlab_g2d_db < handle
                 obj.points(varargin{i}).setCoordinates(r_ref*u_i(1), r_ref*u_i(2));
             end
 
+        end
+
+        function setPointDistanceFromPoint(obj, pIndex, x, y, distance)
+
+            if abs(norm([obj.points(pIndex).x - x, obj.points(pIndex).y - y])) < 1e-6
+                error(' Points are on each other.');
+            end
+
+            u = obj.points(pIndex) - emdlab_g2d_point(x,y);
+            u.normalize();
+            obj.points(pIndex).x = x + distance * u.x;
+            obj.points(pIndex).y = y + distance * u.y;
+
+        end
+
+        function setPointDistanceFromP0ULine(obj, pIndex, x, y, ux, uy, distance)
+            obj.points(pIndex).setDistanceFromLine(emdlab_g2d_line(x,y,ux,uy),distance);
         end
 
         %% edge methods
@@ -480,6 +491,7 @@ classdef emdlab_g2d_db < handle
 
         end
 
+        % edge extensions to draw complex geometries
         function varargout = extendSegmentBySegmentUpToPoint(obj, eIndex, x, y, seIndex)
 
             % set default start/end index as end
@@ -805,7 +817,7 @@ classdef emdlab_g2d_db < handle
             end
 
         end
-        
+
         function removeEdge(obj, eIndex)
 
             % first remove all connected loops
@@ -924,7 +936,7 @@ classdef emdlab_g2d_db < handle
                     obj.loops(varargin{i}(j)).tags(end+1) = faceName;
                 end
 
-            end            
+            end
 
             if nargout == 1
                 varargout{1} = faceHandle;
@@ -940,7 +952,7 @@ classdef emdlab_g2d_db < handle
                 faceIndex = obj.getFaceIndexByTag(faceIndex);
             end
             obj.faces(faceIndex) = [];
-            
+
         end
 
         function faceIndex = getFaceIndexByTag(obj, fTag)
@@ -963,10 +975,6 @@ classdef emdlab_g2d_db < handle
 
         function setFaceColor(obj, faceTag, R, G, B)
             obj.faces(obj.getFaceIndexByTag(faceTag)).color = [R,G,B]/255;
-        end
-
-        %% intersection methods
-        function p = getIntersectionLineLine(x1,y1,x2,y2,x3,y3,x4,y4)
         end
 
         %% mesh generation methods
@@ -1054,7 +1062,7 @@ classdef emdlab_g2d_db < handle
             if ~isempty(v)
                 patch('faces', cl, 'vertices', v, 'edgecolor', 'b', 'linewidth',1.2);
                 if showTags
-                    
+
                     edgeTags = cell(1,Ne);
                     for i = 1:Ne
                         edgeTags{i} = obj.edges(i).tag;
@@ -1318,7 +1326,8 @@ classdef emdlab_g2d_db < handle
 
         end
 
-        % mesh max length
+        %% functions to set wireframe mesh
+        % setting a fixed mesh length for all geometrical entities
         function setMeshMaxLength(obj, mLength)
 
             for i = 1:numel(obj.edges)
@@ -1332,13 +1341,38 @@ classdef emdlab_g2d_db < handle
 
         end
 
+        % setting a max mesh length for specefied loops
         function setLoopMeshMaxLength(obj, loopIndex, mLength)
 
-            % get loop handle
-            loopHandle = obj.loops(loopIndex);
+            for li = loopIndex
 
-            for i = 1:numel(loopHandle.edges)
-                eptr = loopHandle.edges{i};
+                % get loop handle
+                loopHandle = obj.loops(li);
+
+                for i = 1:numel(loopHandle.edges)
+                    eptr = loopHandle.edges{i};
+                    eptr.setMaxLength(mLength);
+                    switch class(eptr)
+                        case 'emdlab_g2d_segment'
+                            eptr.p0.meshSize = mLength;
+                            eptr.p1.meshSize = mLength;
+                        case 'emdlab_g2d_arc'
+                            eptr.p1.meshSize = mLength;
+                            eptr.p2.meshSize = mLength;
+                    end
+                end
+
+            end
+
+        end
+
+        % setting a max mesh length for specefied edges
+        function setEdgeMeshMaxLength(obj, edgeIndex, mLength)
+
+            for ei = edgeIndex
+
+                % get loop handle
+                eptr = obj.edges(ei).ptr;
                 eptr.setMaxLength(mLength);
                 switch class(eptr)
                     case 'emdlab_g2d_segment'
@@ -1348,12 +1382,41 @@ classdef emdlab_g2d_db < handle
                         eptr.p1.meshSize = mLength;
                         eptr.p2.meshSize = mLength;
                 end
+
             end
 
         end
 
+        % setting a mesh L1 L2 length for specefied edges
+        function setEdgeMeshL1L2Length(obj, edgeIndex, L1, L2)
+
+            for ei = edgeIndex
+
+                % get loop handle
+                eptr = obj.edges(ei).ptr;
+                eptr.setL1L2(L1,L2);
+                switch class(eptr)
+                    case 'emdlab_g2d_segment'
+                        eptr.p0.meshSize = L1;
+                        eptr.p1.meshSize = L2;
+                    case 'emdlab_g2d_arc'
+                        eptr.p1.meshSize = L1;
+                        eptr.p2.meshSize = L2;
+                end
+
+            end
+
+        end
+
+        % seeting the mesh size using a radial function in cylindrical coordinate system
         function setMeshLengthByRadialFunction(obj, fHandle)
 
+            % check handle function
+            if nargin(fHandle) ~= 1
+                error('The radial function must get only one input argument.');
+            end
+
+            % set mesh size for all edges
             for i = 1:numel(obj.edges)
 
                 if isa(obj.edges(i).ptr, 'emdlab_g2d_segment')
@@ -1374,8 +1437,44 @@ classdef emdlab_g2d_db < handle
 
         end
 
+        % setting the mesh size using mesh size function f(x) in cartesian coordinate system
+        function setMeshLengthByXFunction(obj, fHandle)
+
+            % check handle function
+            if nargin(fHandle) ~= 1
+                error('The x function must get only one input argument.');
+            end
+
+            % set mesh size for all edges
+            for i = 1:numel(obj.edges)
+
+                if isa(obj.edges(i).ptr, 'emdlab_g2d_segment')
+                    obj.edges(i).ptr.setL1L2(fHandle(obj.edges(i).ptr.p0.x), fHandle(obj.edges(i).ptr.p1.x))
+                elseif  isa(obj.edges(i).ptr, 'emdlab_g2d_arc')
+                    obj.edges(i).ptr.setMaxLength(fHandle(obj.edges(i).ptr.p1.x));
+                elseif  isa(obj.edges(i).ptr, 'emdlab_g2d_spline')
+                    obj.edges(i).ptr.setL1L2(fHandle(obj.edges(i).ptr.pts(1).x), fHandle(obj.edges(i).ptr.pts(end).x));
+                end
+
+            end
+
+            % set mesh size at points for Gmsh
+            for i = 1:numel(obj.points)
+                obj.points(i).meshSize = fHandle(obj.points(i).x);
+                if isnan(obj.points(i).meshSize), obj.points(i).meshSize = 1; end
+            end
+
+        end
+
+        % setting the mesh size using mesh size function f(y) in cartesian coordinate system
         function setMeshLengthByYFunction(obj, fHandle)
 
+            % check handle function
+            if nargin(fHandle) ~= 1
+                error('The y function must get only one input argument.');
+            end
+
+            % set mesh size for all edges
             for i = 1:numel(obj.edges)
 
                 if isa(obj.edges(i).ptr, 'emdlab_g2d_segment')
@@ -1396,7 +1495,39 @@ classdef emdlab_g2d_db < handle
 
         end
 
-        % interact with Gmsh software
+        % setting the mesh size using mesh size function f(x,y) in cartesian coordinate system
+        function setMeshLengthByXYFunction(obj, fHandle)
+
+            % check handle function
+            if nargin(fHandle) ~= 2
+                error('The xy function must get only one input argument.');
+            end
+
+            % set mesh size for all edges
+            for i = 1:numel(obj.edges)
+
+                % pointer to edge
+                eptr = obj.edges(i).ptr;
+
+                if isa(obj.edges(i).ptr, 'emdlab_g2d_segment')
+                    obj.edges(i).ptr.setL1L2(fHandle(eptr.p0.x,eptr.p0.y), fHandle(eptr.p1.x,eptr.p1.y))
+                elseif  isa(obj.edges(i).ptr, 'emdlab_g2d_arc')
+                    obj.edges(i).ptr.setMaxLength(fHandle(eptr.p1.x,eptr.p1.y));
+                elseif  isa(obj.edges(i).ptr, 'emdlab_g2d_spline')
+                    obj.edges(i).ptr.setL1L2(fHandle(eptr.pts(1).x,eptr.pts(1).y), fHandle(eptr.pts(end).x,eptr.pts(end).y));
+                end
+
+            end
+
+            % set mesh size at points for Gmsh
+            for i = 1:numel(obj.points)
+                obj.points(i).meshSize = fHandle(obj.points(i).x,obj.points(i).y);
+                if isnan(obj.points(i).meshSize), obj.points(i).meshSize = 1; end
+            end
+
+        end
+
+        %% communication with Gmsh software
         function write_geo_file(obj)
 
             % define a new geo file
@@ -1460,7 +1591,7 @@ classdef emdlab_g2d_db < handle
 
         function m = read_msh_file(obj)
 
-            % run gmsh via matlab            
+            % run gmsh via matlab
             pyCodePath = "C:\\emdlab-win64\\py-files\\gmsh\\emdlab_gmsh_runGeoSaveMsh2D.py";
 
             [status ,~] = system(char('"' + obj.pyPath + '"' + " " + '"' + pyCodePath+ '"'));
@@ -1518,7 +1649,7 @@ classdef emdlab_g2d_db < handle
             fprintf(fid, 'Coherence;\n');
             fclose(fid);
 
-            % run gmsh via matlab            
+            % run gmsh via matlab
             pyCodePath = "C:\\emdlab-win64\\py-files\\emdlab_gmsh_runGeoSaveStep.py";
 
             [status,~] = system(char('"' + obj.pyPath + '"' + " " + '"' + pyCodePath+ '"'));
@@ -1534,6 +1665,917 @@ classdef emdlab_g2d_db < handle
             stpPath = "C:\emdlab-win64\geometry\step\emdlab_g3d_stepFile.step";
             copyfile(stpPath, cd + "\" + string(faceName) + ".step")
 
+        end
+
+    end
+
+    methods (Static=true)
+
+        %% intersection methods
+        % intersection of two infinit lines
+        function [xi, yi] = getIntersectionLineLine(x1, y1, ux1, uy1, x2, y2, ux2, uy2)
+
+            % Intersection of two infinite lines defined by:
+            % L1: (x1,y1) + t*(ux1,uy1)
+            % L2: (x2,y2) + s*(ux2,uy2)
+
+            % Check zero direction vectors
+            if (ux1 == 0 && uy1 == 0) || (ux2 == 0 && uy2 == 0)
+                error('Zero direction vectors is not acceptable.');
+            end
+
+            A = [ux1, -ux2;
+                uy1, -uy2];
+
+            b = [x2 - x1;
+                y2 - y1];
+
+            % Robust parallel check
+            if abs(det(A)) < 1e-12 * (norm([ux1 uy1]) + norm([ux2 uy2]))
+                xi = []; yi = [];
+                return;
+            end
+
+            ts = A \ b;
+            t = ts(1);
+
+            % Intersection point on line 1
+            xi = x1 + t*ux1;
+            yi = y1 + t*uy1;
+        end
+
+        % intersection of an infinite line with circle
+        function [xi,yi] = getIntersectionLineCircle(x,y,ux,uy,xc,yc,r)
+            % Intersection of infinite line:
+            %   L(t) = (x, y) + t*(ux, uy)
+            % with circle:
+            %   (X - xc)^2 + (Y - yc)^2 = r^2
+
+            % Check zero direction vectors
+            if abs(ux) < eps && abs(uy) < eps
+                error('Zero direction vectors is not acceptable.');
+            end
+
+            % Check valid radius
+            if r < 0
+                error('Circle radius must be a positive double number.');
+            end
+
+            % Shift line origin to circle center
+            dx = x - xc;
+            dy = y - yc;
+
+            % Quadratic coefficients
+            A = ux*ux + uy*uy;
+            B = 2*(dx*ux + dy*uy);
+            C = dx*dx + dy*dy - r*r;
+
+            % Discriminant
+            D = B*B - 4*A*C;
+
+            % No real intersection
+            if D < 0
+                xi = []; yi = [];
+                return;
+            end
+
+            sqrtD = sqrt(max(D,0));
+            t1 = (-B + sqrtD) / (2*A);
+            t2 = (-B - sqrtD) / (2*A);
+
+            % Compute intersection points
+            x1 = x + t1*ux;  y1 = y + t1*uy;
+            x2 = x + t2*ux;  y2 = y + t2*uy;
+
+            % Tangent (one solution)
+            if abs(D) < 1e-12 * (A + abs(B) + abs(C))
+                xi = x1;
+                yi = y1;
+                return;
+            end
+
+            % Two intersections → return in order of smaller t first
+            if abs(t1) <= abs(t2)
+                xi = [x1; x2];
+                yi = [y1; y2];
+            else
+                xi = [x2; x1];
+                yi = [y2; y1];
+            end
+        end
+
+        % intersection of an infinite line with an infinite ray
+        function [xi, yi] = getIntersectionLineRay(x1, y1, ux1, uy1, x2, y2, ux2, uy2)
+            % Intersection of a line and a ray
+            % Line: (x1,y1) + t*(ux1, uy1), t in (-inf, inf)
+            % Ray:  (x2,y2) + s*(ux2, uy2), s >= 0
+            % Returns intersection point (xi, yi) or [] if no intersection on ray
+
+            xi = [];
+            yi = [];
+
+            % Check zero direction vectors
+            if (ux1 == 0 && uy1 == 0) || (ux2 == 0 && uy2 == 0)
+                error('Direction vectors cannot be zero.');
+            end
+
+            % Solve for t and s: x1 + t*ux1 = x2 + s*ux2, y1 + t*uy1 = y2 + s*uy2
+            A = [ux1, -ux2;
+                uy1, -uy2];
+            b = [x2 - x1;
+                y2 - y1];
+
+            detA = ux1*(-uy2) - uy1*(-ux2);
+
+            % Check if line and ray are parallel
+            if abs(detA) < 1e-12
+                return; % Parallel, no intersection (or collinear)
+            end
+
+            ts = A\b;
+            t = ts(1);
+            s = ts(2);
+
+            % Intersection must be on ray (s >= 0)
+            if s < 0
+                return;
+            end
+
+            xi = x1 + t*ux1;
+            yi = y1 + t*uy1;
+        end
+
+        % intersection of an infinite ray with circle
+        function [xi,yi] = getIntersectionRayCircle(x,y,ux,uy,xc,yc,r)
+            % Intersection of RAY:
+            %   L(t) = (x, y) + t*(ux, uy),  t >= 0
+            % with circle:
+            %   (X - xc)^2 + (Y - yc)^2 = r^2
+
+            % Check zero direction vector
+            if abs(ux) < eps && abs(uy) < eps
+                error('Zero direction vector is not acceptable.');
+            end
+
+            % Check radius
+            if r < 0
+                error('Circle radius must be a positive number.');
+            end
+
+            % Shift coordinate system so circle center is at origin
+            dx = x - xc;
+            dy = y - yc;
+
+            % Quadratic coefficients for |(dx,dy) + t*(ux,uy)|^2 = r^2
+            A = ux*ux + uy*uy;
+            B = 2*(dx*ux + dy*uy);
+            C = dx*dx + dy*dy - r*r;
+
+            % Discriminant
+            D = B*B - 4*A*C;
+
+            % No intersection
+            if D < 0
+                xi = []; yi = [];
+                return;
+            end
+
+            % Compute the two potential solutions
+            sqrtD = sqrt(max(D,0));
+            t1 = (-B + sqrtD) / (2*A);
+            t2 = (-B - sqrtD) / (2*A);
+
+            % Accept only t >= 0 (ray condition)
+            t_valid = [t1; t2];
+            t_valid = t_valid(t_valid >= 0);
+
+            if isempty(t_valid)
+                xi = []; yi = [];
+                return;
+            end
+
+            % Compute intersection points
+            xi = x + t_valid * ux;
+            yi = y + t_valid * uy;
+
+            % If tangent (one point), keep single output
+            if length(t_valid) == 1
+                xi = xi(1);
+                yi = yi(1);
+            end
+        end
+
+        % intersection of two circles
+        function [xi,yi] = getIntersectionCircleCircle(xc1,yc1,r1,xc2,yc2,r2)
+
+            % Intersection of two circles:
+            % (X - xc1)^2 + (Y - yc1)^2 = r1^2
+            % (X - xc2)^2 + (Y - yc2)^2 = r2^2
+
+            % Validate radii
+            if r1 < 0 || r2 < 0
+                error('Circle radii must be positive numbers.');
+            end
+
+            % Distance between centers
+            dx = xc2 - xc1;
+            dy = yc2 - yc1;
+            d = sqrt(dx*dx + dy*dy);
+
+            % Check special cases
+
+            % Identical circles → infinite intersections (not solvable uniquely)
+            if d < eps && abs(r1 - r2) < eps
+                xi = []; yi = [];
+                return;
+            end
+
+            % No intersection: too far apart or one inside another without touching
+            if d > r1 + r2 || d < abs(r1 - r2)
+                xi = []; yi = [];
+                return;
+            end
+
+            % Compute 'a' (distance from circle 1 center to line of intersection)
+            a = (r1*r1 - r2*r2 + d*d) / (2*d);
+
+            % Height of intersection points above/below the line between centers
+            h_sq = r1*r1 - a*a;
+            if h_sq < 0
+                h_sq = 0; % numerical safety clamp
+            end
+            h = sqrt(h_sq);
+
+            % Midpoint between the intersection points
+            xm = xc1 + a*dx/d;
+            ym = yc1 + a*dy/d;
+
+            % Tangent case → one point
+            if abs(h) < 1e-14
+                xi = xm;
+                yi = ym;
+                return;
+            end
+
+            % Two intersection points
+            rx = -dy * (h/d);
+            ry =  dx * (h/d);
+
+            xi = [xm + rx; xm - rx];
+            yi = [ym + ry; ym - ry];
+
+        end
+
+        % intersection of two rays
+        function [xi, yi] = getIntersectionRayRay(x1, y1, ux1, uy1, x2, y2, ux2, uy2)
+            % Intersection of two rays
+            % Ray 1: (x1,y1) + t*(ux1, uy1), t >= 0
+            % Ray 2: (x2,y2) + s*(ux2, uy2), s >= 0
+            % Returns intersection point (xi, yi) or [] if no intersection
+
+            xi = [];
+            yi = [];
+
+            % Check zero direction vectors
+            if (ux1 == 0 && uy1 == 0) || (ux2 == 0 && uy2 == 0)
+                error('Ray direction vectors cannot be zero.');
+            end
+
+            % Solve for t and s: x1 + t*ux1 = x2 + s*ux2, y1 + t*uy1 = y2 + s*uy2
+            A = [ux1, -ux2;
+                uy1, -uy2];
+            b = [x2 - x1;
+                y2 - y1];
+
+            detA = ux1*(-uy2) - uy1*(-ux2);
+
+            % Check if rays are parallel
+            if abs(detA) < 1e-12
+                % Parallel rays: no intersection or infinite (collinear)
+                % Optional: handle collinear separately if needed
+                return;
+            end
+
+            ts = A\b;
+            t = ts(1);
+            s = ts(2);
+
+            % Check if intersection is in forward direction of both rays
+            if t < 0 || s < 0
+                return; % intersection is behind one of the rays
+            end
+
+            xi = x1 + t*ux1;
+            yi = y1 + t*uy1;
+        end
+
+        % intersection of two finite segments
+        function [xi,yi] = getIntersectionSegmentSegment(x1,y1,x2,y2,x3,y3,x4,y4)
+            % Returns the intersection point(s) of two finite segments:
+            % Segment 1: (x1,y1)-(x2,y2)
+            % Segment 2: (x3,y3)-(x4,y4)
+
+            % Direction vectors
+            ux = x2 - x1;
+            uy = y2 - y1;
+            vx = x4 - x3;
+            vy = y4 - y3;
+
+            % Solve:
+            % (x1,y1) + t*(ux,uy) = (x3,y3) + s*(vx,vy)
+            A = [ux, -vx;
+                uy, -vy];
+
+            b = [x3 - x1;
+                y3 - y1];
+
+            detA = ux*(-vy) - uy*(-vx);
+
+            % Parallel or nearly parallel
+            if abs(detA) < 1e-12
+                % Check if collinear by checking distance from point to line
+                if abs((x3 - x1)*uy - (y3 - y1)*ux) > 1e-12
+                    xi = []; yi = [];
+                    return; % parallel but not collinear
+                end
+
+                % Collinear: check 1D overlap on projection
+                % Project onto x or y depending on largest component
+                if abs(ux) >= abs(uy)
+                    % use x projection
+                    seg1 = sort([x1 x2]);
+                    seg2 = sort([x3 x4]);
+
+                    left  = max(seg1(1), seg2(1));
+                    right = min(seg1(2), seg2(2));
+
+                    if left > right
+                        xi = []; yi = [];
+                        return; % no overlap
+                    end
+
+                    % Overlapping interval in x → compute corresponding points
+                    if abs(ux) < 1e-12
+                        % vertical line but collinear case handled above
+                        xi = x1;
+                        yi = linspace(min(y1,y2), max(y1,y2), 2).';
+                    else
+                        t_left  = (left  - x1) / ux;
+                        t_right = (right - x1) / ux;
+                        xi = [left; right];
+                        yi = [y1 + t_left*uy; y1 + t_right*uy];
+                    end
+
+                    return;
+
+                else
+                    % use y projection
+                    seg1 = sort([y1 y2]);
+                    seg2 = sort([y3 y4]);
+
+                    low  = max(seg1(1), seg2(1));
+                    high = min(seg1(2), seg2(2));
+
+                    if low > high
+                        xi = []; yi = [];
+                        return; % no overlap
+                    end
+
+                    if abs(uy) < 1e-12
+                        yi = y1;
+                        xi = linspace(min(x1,x2), max(x1,x2), 2).';
+                    else
+                        t_low  = (low  - y1) / uy;
+                        t_high = (high - y1) / uy;
+                        yi = [low; high];
+                        xi = [x1 + t_low*ux; x1 + t_high*ux];
+                    end
+
+                    return;
+                end
+            end
+
+            % Non-parallel case → unique intersection if t and s in [0,1]
+            ts = A \ b;
+            t = ts(1);
+            s = ts(2);
+
+            if t < 0 || t > 1 || s < 0 || s > 1
+                xi = []; yi = [];
+                return; % intersection lies outside segments
+            end
+
+            xi = x1 + t*ux;
+            yi = y1 + t*uy;
+        end
+
+        % intersection of an infinite line with a finite segment
+        function [xi,yi] = getIntersectionLineSegment(x,y,ux,uy,x1,y1,x2,y2)
+            % Intersection of infinite line:
+            %   L(t) = (x, y) + t*(ux, uy)
+            % with finite segment:
+            %   S(s) = (x1, y1) + s*(dx, dy),  0 <= s <= 1
+
+            % Direction of segment
+            dx = x2 - x1;
+            dy = y2 - y1;
+
+            % Check zero direction vector for line or segment
+            if abs(ux) < eps && abs(uy) < eps
+                error('Line direction vector cannot be zero.');
+            end
+
+            if abs(dx) < eps && abs(dy) < eps
+                error('Segment endpoints are identical; no segment to intersect.');
+            end
+
+            % Solve:
+            % (x, y) + t*(ux,uy) = (x1, y1) + s*(dx,dy)
+            A = [ux, -dx;
+                uy, -dy];
+
+            b = [x1 - x;
+                y1 - y];
+
+            detA = ux*(-dy) - uy*(-dx);
+
+            % Parallel or nearly parallel
+            if abs(detA) < 1e-14
+                % Check collinearity
+                if abs((x1 - x)*uy - (y1 - y)*ux) > 1e-12
+                    xi = []; yi = [];
+                    return; % parallel but not collinear
+                end
+
+                % Collinear case:
+                % Infinite intersections possible → but only return those on segment
+                % Parametrize segment onto line: solve s from segment → line param
+                % Vector projection of (x1-x,y1-y) onto (ux,uy)
+                t1 = ((x1 - x)*ux + (y1 - y)*uy) / (ux*ux + uy*uy);
+                t2 = ((x2 - x)*ux + (y2 - y)*uy) / (ux*ux + uy*uy);
+                tmin = min(t1, t2);
+                tmax = max(t1, t2);
+
+                % Infinite but finite interval → return two endpoints
+                xi = [x + tmin*ux; x + tmax*ux];
+                yi = [y + tmin*uy; y + tmax*uy];
+                return;
+            end
+
+            % Non-parallel → unique solution
+            ts = A \ b;
+            t = ts(1);
+            s = ts(2);
+
+            % Check if intersection is on the segment (0 <= s <= 1)
+            if s < 0 || s > 1
+                xi = []; yi = [];
+                return;
+            end
+
+            % Compute intersection point
+            xi = x + t*ux;
+            yi = y + t*uy;
+        end
+
+        % intersection of a circle with a finite segment
+        function [xi,yi] = getIntersectionCircleSegment(xc, yc, r, x1, y1, x2, y2)
+            % Returns intersection points between a circle and a line segment.
+            % Circle: center (xc,yc), radius r
+            % Segment: endpoints (x1,y1) -> (x2,y2)
+
+            xi = [];
+            yi = [];
+
+            % Shift coordinates so circle center becomes origin
+            x1s = x1 - xc;
+            y1s = y1 - yc;
+            x2s = x2 - xc;
+            y2s = y2 - yc;
+
+            dx = x2s - x1s;
+            dy = y2s - y1s;
+
+            % Quadratic coefficients for intersection with infinite line
+            A = dx*dx + dy*dy;
+            B = 2*(x1s*dx + y1s*dy);
+            C = x1s^2 + y1s^2 - r^2;
+
+            % Discriminant
+            D = B*B - 4*A*C;
+            if D < 0
+                return; % No intersection
+            end
+
+            % Compute solutions for t
+            sqrtD = sqrt(D);
+            t1 = (-B + sqrtD) / (2*A);
+            t2 = (-B - sqrtD) / (2*A);
+
+            % Check if each t is within the segment 0 <= t <= 1
+            ts = [t1 t2];
+            for t = ts
+                if t >= 0 && t <= 1
+                    xi(end+1) = x1s + t*dx + xc;
+                    yi(end+1) = y1s + t*dy + yc;
+                end
+            end
+        end
+
+        % intersection of an infinite ray with a finite segment
+        function [xi,yi] = getIntersectionRaySegment(x, y, ux, uy, x1, y1, x2, y2)
+            % Intersection of a ray with a line segment.
+            % Ray:  start point (x,y), direction (ux,uy) assumed normalized
+            % Segment: endpoints (x1,y1) -> (x2,y2)
+            %
+            % Output:
+            %   (xi, yi) intersection point, or [] if no intersection.
+
+            xi = [];
+            yi = [];
+
+            % Segment direction
+            sx = x2 - x1;
+            sy = y2 - y1;
+
+            % Solve for parameters t (ray) and u (segment)
+            % Ray:     R(t) = [x; y] + t * [ux; uy],  t >= 0
+            % Segment: S(u) = [x1; y1] + u * [sx; sy], 0 <= u <= 1
+            %
+            % Solve: [x; y] + t[ux;uy] = [x1;y1] + u[sx;sy]
+
+            A = [ux, -sx;
+                uy, -sy];
+
+            b = [x1 - x;
+                y1 - y];
+
+            detA = A(1,1)*A(2,2) - A(1,2)*A(2,1);
+            if abs(detA) < 1e-12
+                % Ray and segment are parallel → no intersection
+                return;
+            end
+
+            % Solve [t; u]
+            t = ( b(1)*A(2,2) - A(1,2)*b(2) ) / detA;
+            u = ( A(1,1)*b(2) - b(1)*A(2,1) ) / detA;
+
+            % Check ray condition: t >= 0
+            if t < 0
+                return;
+            end
+
+            % Check segment condition: 0 <= u <= 1
+            if u < 0 || u > 1
+                return;
+            end
+
+            % Intersection point
+            xi = x + t*ux;
+            yi = y + t*uy;
+
+        end
+
+        % intersection of an infinite line with a finite arc
+        function [xi, yi] = getIntersectionLineArc(x0, y0, ux, uy, xc, yc, r, theta1, theta2)
+            % Intersection of infinite line with a circular arc
+            % Line:  (x0,y0) + t*(ux, uy)
+            % Arc:   center (xc,yc), radius r, start angle theta1, end angle theta2 (degrees)
+            % Returns points lying on the arc
+
+            xi = [];
+            yi = [];
+
+            % --- Step 0: check angles ---
+            if theta1 >= theta2
+                error('theta1 must be less than theta2 (degrees).');
+            end
+
+            % Convert degrees to radians
+            theta1 = deg2rad(theta1);
+            theta2 = deg2rad(theta2);
+
+            % --- Step 1: compute line-circle intersection ---
+            dx0 = x0 - xc;
+            dy0 = y0 - yc;
+
+            A = ux^2 + uy^2;
+            B = 2*(dx0*ux + dy0*uy);
+            C = dx0^2 + dy0^2 - r^2;
+
+            D = B^2 - 4*A*C;
+            if D < 0
+                return; % No intersection
+            end
+
+            sqrtD = sqrt(D);
+            t1_val = (-B + sqrtD)/(2*A);
+            t2_val = (-B - sqrtD)/(2*A);
+
+            % Compute potential intersection points
+            points = [x0 + t1_val*ux, y0 + t1_val*uy;
+                x0 + t2_val*ux, y0 + t2_val*uy];
+
+            % --- Step 2: filter points to lie on the arc ---
+            for k = 1:2
+                px = points(k,1);
+                py = points(k,2);
+
+                % Compute angle from center to point
+                angle = atan2(py - yc, px - xc);
+
+                % Normalize angle to [0,2*pi)
+                angle = mod(angle, 2*pi);
+
+                % Check if angle is between theta1 and theta2
+                if angle >= theta1 && angle <= theta2
+                    xi(end+1,1) = px;
+                    yi(end+1,1) = py;
+                end
+            end
+        end
+
+        % intersection of an infinite ray with a finite arc
+        function [xi, yi] = getIntersectionRayArc(x0, y0, ux, uy, xc, yc, r, theta1, theta2)
+            % Intersection of a ray with a circular arc
+            % Ray: (x0,y0) + t*(ux, uy), t >= 0
+            % Arc: center (xc,yc), radius r, start/end angles in degrees
+            %
+            % Returns intersection points that lie on both ray and arc
+
+            xi = [];
+            yi = [];
+
+            % --- Step 0: check angles ---
+            if theta1 == theta2
+                error('theta1 and theta2 must not be equal.');
+            end
+
+            % Convert degrees to radians
+            theta1 = mod(deg2rad(theta1), 2*pi);
+            theta2 = mod(deg2rad(theta2), 2*pi);
+
+            % --- Step 1: compute line-circle intersection ---
+            dx0 = x0 - xc;
+            dy0 = y0 - yc;
+
+            A = ux^2 + uy^2;
+            B = 2*(dx0*ux + dy0*uy);
+            C = dx0^2 + dy0^2 - r^2;
+
+            D = B^2 - 4*A*C;
+            if D < 0
+                return; % No intersection
+            end
+
+            sqrtD = sqrt(D);
+            t_vals = [(-B + sqrtD)/(2*A), (-B - sqrtD)/(2*A)];
+
+            % --- Step 2: filter intersection points on ray and arc ---
+            for t = t_vals
+                if t < 0
+                    continue; % point is behind the ray
+                end
+
+                px = x0 + t*ux;
+                py = y0 + t*uy;
+
+                % Compute angle from center to point
+                angle = atan2(py - yc, px - xc);
+                angle = mod(angle, 2*pi);
+
+                % Check if angle lies on the arc
+                if theta1 < theta2
+                    on_arc = (angle >= theta1) && (angle <= theta2);
+                else
+                    % Arc crosses the 2*pi → 0 boundary
+                    on_arc = (angle >= theta1) || (angle <= theta2);
+                end
+
+                if on_arc
+                    xi(end+1,1) = px;
+                    yi(end+1,1) = py;
+                end
+            end
+        end
+
+        % intersection of a cicle with a finite arc
+        function [xi, yi] = getIntersectionCircleArc(xc1, yc1, r1, xc2, yc2, r2, theta1, theta2)
+            % Intersection of a circle and a circular arc
+            % Circle: center (xc1,yc1), radius r1
+            % Arc: center (xc2,yc2), radius r2, start/end angles in degrees
+            %
+            % Returns intersection points that lie on the arc
+
+            xi = [];
+            yi = [];
+
+            % --- Step 0: check angles ---
+            if theta1 == theta2
+                error('theta1 and theta2 must not be equal.');
+            end
+
+            % Convert degrees to radians
+            theta1 = mod(deg2rad(theta1), 2*pi);
+            theta2 = mod(deg2rad(theta2), 2*pi);
+
+            % --- Step 1: compute intersection of two circles ---
+            dx = xc2 - xc1;
+            dy = yc2 - yc1;
+            d = sqrt(dx^2 + dy^2);
+
+            % Check for no intersection
+            if d > r1 + r2 || d < abs(r1 - r2) || (d==0 && abs(r1-r2)<1e-12)
+                return; % no intersection or identical circles
+            end
+
+            % Distance from circle1 center to intersection line
+            a = (r1^2 - r2^2 + d^2) / (2*d);
+
+            % Height from intersection line to points
+            h_sq = r1^2 - a^2;
+            h = sqrt(max(h_sq, 0));
+
+            % Midpoint between intersection points
+            xm = xc1 + a*dx/d;
+            ym = yc1 + a*dy/d;
+
+            % Two intersection points
+            rx = -dy * (h/d);
+            ry =  dx * (h/d);
+
+            pts = [xm + rx, ym + ry;
+                xm - rx, ym - ry];
+
+            % --- Step 2: filter points on the arc ---
+            for k = 1:2
+                px = pts(k,1);
+                py = pts(k,2);
+
+                % Angle from arc center to point
+                angle = atan2(py - yc2, px - xc2);
+                angle = mod(angle, 2*pi);
+
+                if theta1 < theta2
+                    on_arc = (angle >= theta1) && (angle <= theta2);
+                else
+                    % Arc crosses 2pi → 0 boundary
+                    on_arc = (angle >= theta1) || (angle <= theta2);
+                end
+
+                if on_arc
+                    xi(end+1,1) = px;
+                    yi(end+1,1) = py;
+                end
+            end
+        end
+
+        % intersection of a finite segment with a finite arc
+        function [xi, yi] = getIntersectionSegmentArc(x1, y1, x2, y2, xc, yc, r, theta1, theta2)
+            % Intersection of a segment and a circular arc
+            % Segment: (x1,y1) -> (x2,y2)
+            % Arc: center (xc,yc), radius r, start/end angles in degrees
+            % Returns intersection points lying on both the segment and the arc
+
+            xi = [];
+            yi = [];
+
+            % --- Step 0: check angles ---
+            if theta1 == theta2
+                error('theta1 and theta2 must not be equal.');
+            end
+
+            % Convert degrees to radians
+            theta1 = mod(deg2rad(theta1), 2*pi);
+            theta2 = mod(deg2rad(theta2), 2*pi);
+
+            % --- Step 1: compute intersection of infinite line with circle ---
+            dx = x2 - x1;
+            dy = y2 - y1;
+
+            % Quadratic coefficients
+            x1s = x1 - xc;
+            y1s = y1 - yc;
+
+            A = dx^2 + dy^2;
+            B = 2*(x1s*dx + y1s*dy);
+            C = x1s^2 + y1s^2 - r^2;
+
+            D = B^2 - 4*A*C;
+            if D < 0
+                return; % no intersection
+            end
+
+            sqrtD = sqrt(D);
+            t_vals = [(-B + sqrtD)/(2*A), (-B - sqrtD)/(2*A)];
+
+            % --- Step 2: filter points that lie on segment and on arc ---
+            for t = t_vals
+                if t < 0 || t > 1
+                    continue; % outside segment
+                end
+
+                px = x1 + t*dx;
+                py = y1 + t*dy;
+
+                % Compute angle from arc center to point
+                angle = atan2(py - yc, px - xc);
+                angle = mod(angle, 2*pi);
+
+                % Check if point is on arc
+                if theta1 < theta2
+                    on_arc = (angle >= theta1) && (angle <= theta2);
+                else
+                    % Arc crosses 2pi → 0
+                    on_arc = (angle >= theta1) || (angle <= theta2);
+                end
+
+                if on_arc
+                    xi(end+1,1) = px;
+                    yi(end+1,1) = py;
+                end
+            end
+        end
+
+        % intersection of two finite arcs
+        function [xi, yi] = getIntersectionArcArc(xc1, yc1, r1, theta11, theta12, xc2, yc2, r2, theta21, theta22)
+            % Intersection of two circular arcs
+            % Arc1: center (xc1,yc1), radius r1, start/end angles in degrees
+            % Arc2: center (xc2,yc2), radius r2, start/end angles in degrees
+            % Returns intersection points lying on both arcs
+
+            xi = [];
+            yi = [];
+
+            % --- Step 0: check angles ---
+            if theta11 == theta12 || theta21 == theta22
+                error('Start and end angles must not be equal.');
+            end
+
+            % Convert degrees to radians
+            theta11 = mod(deg2rad(theta11), 2*pi);
+            theta12 = mod(deg2rad(theta12), 2*pi);
+            theta21 = mod(deg2rad(theta21), 2*pi);
+            theta22 = mod(deg2rad(theta22), 2*pi);
+
+            % --- Step 1: compute circle-circle intersection points ---
+            dx = xc2 - xc1;
+            dy = yc2 - yc1;
+            d = sqrt(dx^2 + dy^2);
+
+            % Check for no intersection
+            if d > r1 + r2 || d < abs(r1 - r2) || (d==0 && abs(r1-r2)<1e-12)
+                return; % no intersection or identical circles
+            end
+
+            % Distance from circle1 center to intersection line
+            a = (r1^2 - r2^2 + d^2) / (2*d);
+
+            % Height from line to intersection points
+            h_sq = r1^2 - a^2;
+            h = sqrt(max(h_sq, 0));
+
+            % Midpoint between intersection points
+            xm = xc1 + a*dx/d;
+            ym = yc1 + a*dy/d;
+
+            % Two intersection points
+            rx = -dy * (h/d);
+            ry =  dx * (h/d);
+
+            pts = [xm + rx, ym + ry;
+                xm - rx, ym - ry];
+
+            % --- Step 2: filter points on both arcs ---
+            for k = 1:2
+                px = pts(k,1);
+                py = pts(k,2);
+
+                % Angle relative to Arc1 center
+                angle1 = atan2(py - yc1, px - xc1);
+                angle1 = mod(angle1, 2*pi);
+
+                if theta11 < theta12
+                    on_arc1 = (angle1 >= theta11) && (angle1 <= theta12);
+                else
+                    on_arc1 = (angle1 >= theta11) || (angle1 <= theta12);
+                end
+
+                % Angle relative to Arc2 center
+                angle2 = atan2(py - yc2, px - xc2);
+                angle2 = mod(angle2, 2*pi);
+
+                if theta21 < theta22
+                    on_arc2 = (angle2 >= theta21) && (angle2 <= theta22);
+                else
+                    on_arc2 = (angle2 >= theta21) || (angle2 <= theta22);
+                end
+
+                if on_arc1 && on_arc2
+                    xi(end+1,1) = px;
+                    yi(end+1,1) = py;
+                end
+            end
         end
 
     end

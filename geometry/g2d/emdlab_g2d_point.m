@@ -166,7 +166,7 @@ classdef emdlab_g2d_point  < handle & matlab.mixin.Copyable & emdlab_g2d_constan
 
         end
 
-        function setSignedDistanceFromLine(obj, l, d)
+        function setDistanceFromLine(obj, l, d)
 
             u12 = obj - l.p0;
             vp = l.u.dot(u12) * l.u;
