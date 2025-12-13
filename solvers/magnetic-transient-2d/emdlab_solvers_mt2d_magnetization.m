@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % magnetization object for 2D magnetic-static problems
 
 classdef emdlab_solvers_mt2d_magnetization < handle & matlab.mixin.Copyable
@@ -119,7 +120,7 @@ classdef emdlab_solvers_mt2d_magnetization < handle & matlab.mixin.Copyable
         function rotate(obj, varargin)
 
             if isa(obj.magDir,'double')
-                obj.magDir = ext_protate2(obj.magDir, varargin{:});
+                obj.magDir = emdlab_g2d_rotatePoints(obj.magDir, varargin{:});
             end
 
         end

@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % two-dimensional magnetic-transient cage
 % a cage is made of a number of solid coil arms connected in parallel
 

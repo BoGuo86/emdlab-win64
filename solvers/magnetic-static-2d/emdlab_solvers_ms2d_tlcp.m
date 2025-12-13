@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % magnetic-static two-dimensional tl3
 % triangular lagrangian elements common properties
 
@@ -736,13 +737,30 @@ classdef emdlab_solvers_ms2d_tlcp < handle
         % torque evaluation using maxwell stress tensor
         function y = evalTorqueByMST(obj, xc, yc, r, N)
 
-            if nargin < 5
-                N = 10001;
-            end
+            if nargin < 5, N = 10001; end
             [br, bt, t] = obj.getBrBtOnCircle(xc, yc, r, N);
             br(isnan(br)) = 0;
             bt(isnan(bt)) = 0;
             y = trapz(t, br.*bt) * r^2 * obj.units.k_length^2 * obj.getDepth / (4 * pi * 1e-7);
+
+        end
+
+        function [Ft,Fn] = evalForceByMSTOnLine(obj, x1, y1, x2, y2, N)
+
+            if nargin < 6, N = 10001; end
+            x = linspace(x1,x2,N);
+            y = linspace(y1,y2,N);
+            [Bx, By] = obj.getBxByOnPoints(x,y);
+            Bx(isnan(Bx)) = 0;
+            By(isnan(By)) = 0;
+            t = [x2-x1, y2-y1]; 
+            t = t/norm(t);
+            n = [-t(2),t(1)];
+            Bt = Bx*t(1) + By*t(2);
+            Bn = Bx*n(1) + By*n(2);
+            l = cumsum([0,sqrt(diff(x).^2+diff(y).^2)]);
+            Ft = trapz(l, Bt.*Bn) * obj.units.k_length^2 * obj.getDepth / (4 * pi * 1e-7);
+            Fn = trapz(l, 0.5*(Bn.^2 - Bt.^2)) * obj.units.k_length^2 * obj.getDepth / (4 * pi * 1e-7);
 
         end
 
@@ -1130,6 +1148,97 @@ classdef emdlab_solvers_ms2d_tlcp < handle
         end
 
         function torque = evalTorqueByArkkioSmooth(obj, mzName, GapLength)
+
+            if obj.m.isTL3
+                torque = obj.evalTorqueByArkkioSmoothTL3(mzName, GapLength);
+            elseif obj.m.isTL6
+                torque = obj.evalTorqueByArkkioTL6(mzName, GapLength);
+            else
+                error('Wrong element type');
+            end
+
+        end
+
+        % force evaluation by Arrkio method
+        function torque = evalForceByArkkioTL3(obj, mzName, GapLength)
+
+            obj.evalBe;
+            mzName = obj.m.checkMeshZoneExistence(mzName);
+            mzptr = obj.m.mzs.(mzName);
+            b = [obj.results.Bxg(obj.m.ezi(:, mzptr.zi)); obj.results.Byg(obj.m.ezi(:, mzptr.zi))]';
+            p = mzptr.getCenterOfElements;
+            b = ext_xy2rt(p, b);
+            r = sqrt(sum(p.^2, 2));
+            torque = mzptr.getAreaOfElements' * (b(:, 1) .* b(:, 2) .* r);
+            torque = torque * obj.getDepth * obj.units.k_length^2 / GapLength / (4 * pi * 1e-7);
+
+        end
+
+        function torque = evalForceByArkkioTL6(obj, mzName, GapLength)
+
+            obj.evalBe;
+            mzName = obj.m.checkMeshZoneExistence(mzName);
+            mzptr = obj.m.mzs.(mzName);
+
+            % barycentric coordinates
+            k1 = [0.5,0.5,0];
+            k2 = [0.5,0,0.5];
+            k3 = [0,0.5,0.5];
+
+            % weights
+            w = [1/3,1/3,1/3];
+
+            % x and y coordinates of mesh zone node elements
+            cl = obj.m.cl(obj.m.ezi(:, mzptr.zi),[1,2,3]);
+            x = obj.m.nodes(:,1); x = x(cl);
+            y = obj.m.nodes(:,2); y = y(cl);
+
+            torque = 0;
+            for i = 1:3
+
+                b = [obj.results.Bxg(i,obj.m.ezi(:, mzptr.zi)); obj.results.Byg(i,obj.m.ezi(:, mzptr.zi))]';
+
+                p = [k1(i)*x(:,1) + k2(i)*x(:,2) + k3(i)*x(:,3), ...
+                    k1(i)*y(:,1) + k2(i)*y(:,2) + k3(i)*y(:,3)];
+
+                b = ext_xy2rt(p, b);
+                r = sqrt(sum(p.^2, 2));
+                torque_i = mzptr.getAreaOfElements' * (b(:, 1) .* b(:, 2) .* r)*w(i);
+                torque = torque + torque_i * obj.getDepth * obj.units.k_length^2 / GapLength / (4 * pi * 1e-7);
+
+            end
+
+        end
+
+        function torque = evalForceByArkkio(obj, mzName, GapLength)
+
+            if obj.m.isTL3
+                torque = obj.evalForceByArkkioTL3(mzName, GapLength);
+            elseif obj.m.isTL6
+                torque = obj.evalForceByArkkioTL6(mzName, GapLength);
+            else
+                error('Wrong element type');
+            end
+
+        end
+
+        % force evaluation by Arrkio method using smoothed field data
+        function torque = evalForceByArkkioSmoothTL3(obj, mzName, GapLength)
+
+            mzName = obj.m.checkMeshZoneExistence(mzName);
+            mzptr = obj.m.mzs.(mzName);
+            bx = sum(obj.results.BxnSmooth(:,obj.m.ezi(:, mzptr.zi)),1)'/3;
+            by = sum(obj.results.BynSmooth(:,obj.m.ezi(:, mzptr.zi)),1)'/3;
+            b = [bx,by];
+            p = mzptr.getCenterOfElements;
+            b = ext_xy2rt(p, b);
+            r = sqrt(sum(p.^2, 2));
+            torque = mzptr.getAreaOfElements' * (b(:, 1) .* b(:, 2) .* r);
+            torque = torque * obj.getDepth * obj.units.k_length^2 / GapLength / (4 * pi * 1e-7);
+
+        end
+
+        function torque = evalForceByArkkioSmooth(obj, mzName, GapLength)
 
             if obj.m.isTL3
                 torque = obj.evalTorqueByArkkioSmoothTL3(mzName, GapLength);

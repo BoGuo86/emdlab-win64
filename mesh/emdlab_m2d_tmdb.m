@@ -2742,7 +2742,7 @@ classdef emdlab_m2d_tmdb < handle & emdlab_g2d_constants & matlab.mixin.Copyable
             sps = obj.nodes(ks,:);
 
             % getting a moving contact object
-            agm = emdlab_mcs_arcAirGap([xc,yc], rps, sps, Nlayers);
+            agm = emdlab_mcs_arcAirGapNew1([xc,yc], rps, sps, Nlayers);
             
             % adding air gap to mesh zones
             obj.addmz(name, agm.m);

@@ -1,6 +1,6 @@
 % EMDLAB: Electrical Machines Design Laboratory
 
-classdef emdlab_bcs_scalar < handle
+classdef emdlab_bcs_scalarEdges < handle
     
     % structures for stroing boundary conditions data
     properties (SetAccess = protected)
@@ -39,40 +39,40 @@ classdef emdlab_bcs_scalar < handle
     properties (SetAccess = private)
 
         % dirichlet index
-        iD(:, 1) double;
+        iD (:,1) double;
 
         % dirichlet value
-        vD(:, 1) double;
+        vD (:,1) double;
 
         % odd periodic master index
-        mOP(:, 1) double;
+        mOP (:,1) double;
 
         % odd periodic slave index
-        sOP(:, 1) double;
+        sOP (:,1) double;
 
         % even periodic master index
-        mEP(:, 1) double;
+        mEP (:,1) double;
 
         % even periodic slave index
-        sEP(:, 1) double;
+        sEP (:,1) double;
 
         % index of robin edges
         iR double;
 
         % a value of robin edges
-        aR(:, 1) double;
+        aR (:,1) double;
 
         % b value of robin edges
-        bR(:, 1) double;
+        bR (:,1) double;
 
         % index of neumann edges
         iN double;
 
         % b value of robin edges
-        bN(:, 1) double;
+        bN (:,1) double;
 
         % element type
-        eType(1, :) char;
+        eType (1,:) char;
 
     end
     
@@ -80,25 +80,25 @@ classdef emdlab_bcs_scalar < handle
     properties (Dependent = true, SetAccess = protected)
 
         % number of diriclet nodes
-        Ndbcs(1, 1) double;
+        Ndbcs (1,1) double;
 
         % number of odd periodic nodes
-        Nopbcs(1, 1) double;
+        Nopbcs (1,1) double;
 
         % number of even periodic nodes
-        Nepbcs(1, 1) double;
+        Nepbcs (1,1) double;
 
         % number of neumann edges or facets
-        Nnbcs(1, 1) double;
+        Nnbcs (1,1) double;
         
         % number of robin edges or facets
-        Nrbcs(1, 1) double;
+        Nrbcs (1,1) double;
         
     end
     
     methods
         %% constructor
-        function obj = emdlab_bcs_scalar(varargin)
+        function obj = emdlab_bcs_scalarEdges(varargin)
             
             if nargin == 1
                 obj.eType = varargin{1};
@@ -186,6 +186,7 @@ classdef emdlab_bcs_scalar < handle
         %% definitions
         function setDirichlet(obj, index, value, bcName)
             
+            % set default name for boundary condition
             if nargin < 4
                 bcName = obj.getDefaultBCName;
             end
@@ -206,6 +207,7 @@ classdef emdlab_bcs_scalar < handle
         
         function setRobin(obj, index, alpha, beta, bcName)
             
+            % set default name for boundary condition
             if nargin < 5
                 bcName = obj.getDefaultBCName;
             end
@@ -228,6 +230,7 @@ classdef emdlab_bcs_scalar < handle
         
         function setNeumann(obj, index, beta, bcName)
             
+            % set default name for boundary condition
             if nargin < 4
                 bcName = obj.getDefaultBCName;
             end
@@ -248,6 +251,7 @@ classdef emdlab_bcs_scalar < handle
         
         function setOddPeriodic(obj, mIndex, sIndex, bcName)
             
+            % set default name for boundary condition
             if nargin < 4
                 bcName = obj.getDefaultBCName;
             end
@@ -269,6 +273,7 @@ classdef emdlab_bcs_scalar < handle
         
         function setEvenPeriodic(obj, mIndex, sIndex, bcName)
             
+            % set default name for boundary condition
             if nargin < 4
                 bcName = obj.getDefaultBCName;
             end

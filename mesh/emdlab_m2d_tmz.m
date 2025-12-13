@@ -307,7 +307,11 @@ classdef emdlab_m2d_tmz < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         end
         
         %% tranforms and copy generations
-        function mirror(obj, mirrorAxis)
+        function mirror(obj, varargin)
+            obj.nodes = ext_pmirror2(obj.nodes, varargin{:});
+            obj.cl = obj.cl(:, [1, 3, 2]);
+            obj.makeFalse_isDataSetted;
+            obj.setdata;
         end
         
         function newObj = getMirror(obj, varargin)

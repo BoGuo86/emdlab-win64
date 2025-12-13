@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % two-dimensional magnetic-transient start point
 % a star point is defined to force KCL on a number of voltage-fed stranded coils
 

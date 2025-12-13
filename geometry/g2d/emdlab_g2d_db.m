@@ -1,5 +1,5 @@
 % EMDLAB: Electrical Machines Design Laboratory
-% data base class for 2d geometries
+% emdlab data base class for 2d geometries
 
 classdef emdlab_g2d_db < handle
 
@@ -206,6 +206,135 @@ classdef emdlab_g2d_db < handle
 
         end
 
+        % align points functions
+        function alignPointsXX(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).x = obj.points(varargin{1}).x;
+            end
+
+        end
+
+        function alignPointsXY(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsXR(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsXT(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsYX(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsYY(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsYR(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsYT(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsRX(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsRY(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsRR(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsRT(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsTX(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsTY(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsTR(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
+        function alignPointsTT(obj, varargin)
+
+            for i = 2:numel(varargin)
+                obj.points(varargin{i}).y = obj.points(varargin{1}).y;
+            end
+
+        end
+
         function setPointDistanceFromPoint(obj, pIndex, x, y, distance)
 
             if abs(norm([obj.points(pIndex).x - x, obj.points(pIndex).y - y])) < 1e-6
@@ -221,6 +350,52 @@ classdef emdlab_g2d_db < handle
 
         function setPointDistanceFromP0ULine(obj, pIndex, x, y, ux, uy, distance)
             obj.points(pIndex).setDistanceFromLine(emdlab_g2d_line(x,y,ux,uy),distance);
+        end
+
+        function str = getPointsXCoordinatesForMaxwell(obj, pIndex, unit)
+
+            if nargin<3, unit = 'mm'; end
+            str = "[";
+            for pi = pIndex
+                str = str + sprintf('%.12g', obj.points(pi).x) + ",";
+            end
+            str = char(str);
+            str(end) = "]";
+            str = str + " " + unit;
+
+        end
+
+        function str = getPointsYCoordinatesForMaxwell(obj, pIndex, unit)
+
+            if nargin<3, unit = 'mm'; end
+            str = "[";
+            for pi = pIndex
+                str = str + sprintf('%.12g', obj.points(pi).y) + ",";
+            end
+            str = char(str);
+            str(end) = "]";
+            str = str + " " + unit;
+
+        end
+
+        function str = getEdgesAnglesForMaxwell(obj, eIndex)
+
+            str = "[";
+            for ei = eIndex
+                if isa(obj.edges(ei).ptr, 'emdlab_g2d_arc')
+                    if obj.edges(ei).ptr.direction
+                        str = str + sprintf('%.12g', real(obj.edges(ei).ptr.getAngleDegree)) + ",";
+                    else
+                        str = str + sprintf('-%.12g', real(obj.edges(ei).ptr.getAngleDegree)) + ",";
+                    end
+                else
+                    str = str + "0,";
+                end
+            end
+            str = char(str);
+            str(end) = "]";
+            str = str + " deg";
+
         end
 
         %% edge methods
@@ -1699,6 +1874,152 @@ classdef emdlab_g2d_db < handle
 
             stpPath = "C:\emdlab-win64\geometry\step\emdlab_g3d_stepFile.step";
             copyfile(stpPath, cd + "\" + string(faceName) + ".step")
+
+        end
+
+        %% communication with Maxwell software
+        function drawGeometryInMaxwellModel(obj)
+
+            % reference script
+            fid1 = fopen('C:\emdlab-win64\geometry\g2d\emdlab_g2d_maxwell.vbs', 'r');
+
+            % modified script
+            fid2 = fopen('C:\emdlab-win64\geometry\g2d\emdlab_g2d_maxwellScript.vbs', 'w');
+
+            % read/write loop
+            while true
+
+                % check the end of reference file and terminate loop
+                if feof(fid1)
+                    fclose(fid1);
+                    fclose(fid2);
+                    break;
+                end
+
+                str = fgetl(fid1);
+
+                % detect 'matlab line to import matlab variables
+                if strcmpi(str(2:end),'matlab')
+
+                    fprintf(fid2, 'call defineGlobalVariable(oProject, "x_pts", "%s")\n', obj.getPointsXCoordinatesForMaxwell(1:length(obj.points)));
+                    fprintf(fid2, 'call makeGBHidden(oProject, "x_pts")\n');
+                    fprintf(fid2, 'call defineGlobalVariable(oProject, "y_pts", "%s")\n', obj.getPointsYCoordinatesForMaxwell(1:length(obj.points)));
+                    fprintf(fid2, 'call makeGBHidden(oProject, "y_pts")\n');
+                    fprintf(fid2, 'call defineGlobalVariable(oProject, "e_angles", "%s")\n', obj.getEdgesAnglesForMaxwell(1:length(obj.edges)));
+                    fprintf(fid2, 'call makeGBHidden(oProject, "e_angles")\n');
+
+                    % addfaces
+                    for i = 1:numel(obj.faces)
+
+                        faceName = obj.faces(i).tag;
+                        lNames = strings(1,numel(obj.faces(i).loops));                        
+                        lIndex = 0;
+
+                        for l = obj.faces(i).loops
+
+                            lIndex = lIndex + 1;
+                            lName = faceName + "_loop_" + string(lIndex) + "_";
+                            eNames = strings(1,numel(l.edges));
+
+                            % add edges
+                            for j = 1:numel(l.edges)
+
+                                eptr = l.edges{j};
+                                eNames(j) = lName + eptr.tag;
+
+                                if isa(eptr, 'emdlab_g2d_segment')
+
+                                    fprintf(fid2, 'call drawSegment(oEditor, %d, %d, "%s")\n', obj.getPointIndexByTag(eptr.p0.tag), ...
+                                        obj.getPointIndexByTag(eptr.p1.tag), eNames(j));
+
+                                elseif isa(eptr, 'emdlab_g2d_arc')
+
+                                    fprintf(fid2, 'call drawArcCPA(oEditor, %d, %d, %d, "%s")\n', obj.getPointIndexByTag(eptr.p0.tag), ...
+                                        obj.getPointIndexByTag(eptr.p1.tag), obj.getEdgeIndexByTag(eptr.tag), eNames(j));
+
+                                elseif isa(eptr, 'emdlab_g2d_spline')
+
+                                    %                             pointsList = zeros(1,numel(obj.edges(i).ptr.pts));
+                                    %                             for j = 1:numel(obj.edges(i).ptr.pts)
+                                    %                                 pointsList(j) = obj.getPointIndexByTag(obj.edges(i).ptr.pts(j).tag);
+                                    %                             end
+                                    %                             pointsList = join(string(pointsList), ", ");
+                                    %                             fprintf(fid, 'Spline(%d) = {%s};\n', i, pointsList);
+
+                                end
+
+                            end
+
+                            % unite edges
+                            fprintf(fid2, 'call uniteEdges(oEditor, "%s")\n', join(eNames,','));
+
+                            % cover loop
+                            fprintf(fid2, 'call coverLoop(oEditor, "%s")\n', eNames(1));
+
+                            % save loop name
+                            lNames(lIndex) = eNames(1);
+
+                        end
+
+                        % subtract first loop from the rest
+                        if numel(lNames) > 1
+                            fprintf(fid2, 'call subtract(oEditor, "%s", "%s")\n', join(lNames(2:end),','), lNames(1));
+                        end
+
+                        % rename face
+                        fprintf(fid2, 'call rename(oEditor, "%s", "%s")\n', lNames(1), faceName);
+
+                        % set face color
+                        fprintf(fid2, 'call changeObjectColor(oEditor, "%s", %s)\n', faceName, join(string(floor(obj.faces(i).color*255)),","));                        
+
+                    end                    
+
+                else
+                    fprintf(fid2, '%s\n', str);
+                end
+
+            end
+
+            % run modified script
+            system('C:\emdlab-win64\geometry\g2d\emdlab_g2d_maxwellScript.vbs');
+
+        end
+
+        function updateGeometryInMaxwellModel(obj)
+
+            % reference script
+            fid1 = fopen('C:\emdlab-win64\geometry\g2d\emdlab_g2d_maxwellUpdate.vbs', 'r');
+
+            % modified script
+            fid2 = fopen('C:\emdlab-win64\geometry\g2d\emdlab_g2d_maxwellScript.vbs', 'w');
+
+            % read/write loop
+            while true
+
+                % check the end of reference file and terminate loop
+                if feof(fid1)
+                    fclose(fid1);
+                    fclose(fid2);
+                    break;
+                end
+
+                str = fgetl(fid1);
+
+                % detect 'matlab line to import matlab variables
+                if strcmpi(str(2:end),'matlab')
+
+                    fprintf(fid2, 'call updateGlobalVariable(oProject, "x_pts", "%s")\n', obj.getPointsXCoordinatesForMaxwell(1:length(obj.points)));
+                    fprintf(fid2, 'call updateGlobalVariable(oProject, "y_pts", "%s")\n', obj.getPointsYCoordinatesForMaxwell(1:length(obj.points)));
+                    fprintf(fid2, 'call updateGlobalVariable(oProject, "e_angles", "%s")\n', obj.getEdgesAnglesForMaxwell(1:length(obj.edges)));
+
+                else
+                    fprintf(fid2, '%s\n', str);
+                end
+
+            end
+
+            % run modified script
+            system('C:\emdlab-win64\geometry\g2d\emdlab_g2d_maxwellScript.vbs');
 
         end
 

@@ -6,7 +6,7 @@
 % isotropic
 % homogenous
 % nonlinear
-% with motion
+% with motion: remesh technology with fixed number of nodes
 
 classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & matlab.mixin.Copyable
 

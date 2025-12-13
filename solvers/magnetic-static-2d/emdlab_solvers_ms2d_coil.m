@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % two-dimensional magnetic-static coil
 % coil is made of a series of coil arms: there is no parallel branches
 

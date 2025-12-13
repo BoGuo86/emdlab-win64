@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % two-dimensional magnetic-transient motion definition
 % motion can be linear or rotational
 

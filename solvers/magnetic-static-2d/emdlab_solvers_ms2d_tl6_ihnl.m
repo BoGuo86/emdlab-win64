@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % two dimensional nonlinear magnetic-static solver
 % nonlinear solver: Newton-Raphson
 % second order triangular mesh

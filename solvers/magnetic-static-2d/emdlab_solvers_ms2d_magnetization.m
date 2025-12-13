@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % magnetization object for 2D magnetic-static problems
 
 classdef emdlab_solvers_ms2d_magnetization < handle & matlab.mixin.Copyable

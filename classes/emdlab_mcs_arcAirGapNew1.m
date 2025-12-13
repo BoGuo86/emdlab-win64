@@ -2,7 +2,7 @@
 % moving contacts
 % arc air gap: two concentric arcs: pure cylindrical motion
 
-classdef emdlab_mcs_arcAirGap < handle & emdlab_g2d_constants & matlab.mixin.SetGet
+classdef emdlab_mcs_arcAirGapNew1 < handle & emdlab_g2d_constants & matlab.mixin.SetGet
     
     properties (SetAccess = private)
         
@@ -52,7 +52,7 @@ classdef emdlab_mcs_arcAirGap < handle & emdlab_g2d_constants & matlab.mixin.Set
     
     methods
         
-        function obj = emdlab_mcs_arcAirGap(center, ips, ops, Nlayer, movingBoundary)
+        function obj = emdlab_mcs_arcAirGapNew1(center, ips, ops, Nlayer, movingBoundary)
             
             if nargin < 5, movingBoundary = 'inner'; end
             obj.center = center;
@@ -81,8 +81,8 @@ classdef emdlab_mcs_arcAirGap < handle & emdlab_g2d_constants & matlab.mixin.Set
         
         function set.Nlayer(obj, newValue)
             
-            if newValue < 2
-                throw(MException('', 'Number of layers must be higher than 2.'));
+            if newValue < 1
+                throw(MException('', 'Number of layers must be higher than 1.'));
             end
             
             obj.Nlayer = newValue;
@@ -165,9 +165,12 @@ classdef emdlab_mcs_arcAirGap < handle & emdlab_g2d_constants & matlab.mixin.Set
             rmid = (obj.rin + obj.rout) / 2;
             
             if alpha < obj.gaeps
-                
-                % number of points on inner arc
+
+                % number of points on inner arc layers
                 Ntmp = ceil(rmid * obj.angle / obj.h0);
+
+                rtmp = linspace(obj.rin,obj.rout,obj.Nlayer+1);
+                rtmp = rtmp(2:end-1);
                 
                 if obj.ipas(1)<pi
                     a1 = obj.ipas(1);
@@ -176,24 +179,37 @@ classdef emdlab_mcs_arcAirGap < handle & emdlab_g2d_constants & matlab.mixin.Set
                 end
                 
                 t = linspace(a1, obj.ipas(end), Ntmp)';
-                p = rmid * [cos(t), sin(t)];
+
+                p = obj.ips;                
+                for i = 1:obj.Nlayer-1
+                    p = [p;rtmp(i) * [cos(t), sin(t)]];
+                end
+                p = [p;obj.ops];
                 
                 % indicies of critical points
-                index1 = 1;
-                index2 = obj.Nops;
-                index3 = obj.Nips + obj.Nops + Ntmp;
-                index4 = obj.Nips + obj.Nops;
-                index5 = obj.Nops + 1;
-                index6 = obj.Nips + obj.Nops + 1;
+                n = [obj.Nips,Ntmp*ones(1,obj.Nlayer-1),obj.Nops];
+                n1 = cumsum([1,n(1:end-1)]);
+                n2 = cumsum(n);
+                ices = zeros([],2);
+
+                for i = 2:obj.Nlayer
+                    newIndex = [n1(i):n2(i)-1;n1(i)+1:n2(i)]';
+                    ices = [ices;newIndex];
+                end
                 
-                % geometry faces
-                f = [index1:index2-1; index1+1:index2]';
-                f = [f; [index2,index3;index3,index4]];
-                f = [f; [index4:-1:index5+1; index4-1:-1:index5]'];
-                f = [f; [index5,index6;index6,index1]];
-                
-                % geometry constraint edges
-                ices = [index6:index3 - 1; index6 + 1:index3]';
+                newIndex = [n1(end):n2(end)-1;n1(end)+1:n2(end)]';
+                f = newIndex;
+                for i = 1:obj.Nlayer
+                    f = [f;[n2(end-i+1),n2(end-i)]];
+                end
+                newIndex = [n1(1):n2(1)-1;n1(1)+1:n2(1)]';
+                f = [f;fliplr(newIndex)];
+                for i = 1:obj.Nlayer
+                    f = [f;[n1(i),n1(i+1)]];
+                end
+
+                obj.m = emdlab_m2d_mm(f, p, ices);
+                return;
                 
             else
                 

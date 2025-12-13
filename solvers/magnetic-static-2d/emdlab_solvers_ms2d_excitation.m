@@ -1,4 +1,4 @@
-% developer: https://ComProgExpert.com
+% EMDLAB: Electrical Machines Design Laboratory
 
 classdef emdlab_solvers_ms2d_excitation < handle & matlab.mixin.SetGet
 

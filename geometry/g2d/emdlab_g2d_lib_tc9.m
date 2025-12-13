@@ -42,7 +42,7 @@ e3 = g.extendSegmentBySegment(e2,-pi/2+tta,ds);
 e5 = g.addSegmentByCoordinates(e4h.ptr.p1.x,e4h.ptr.p1.y,OD/2,0);
 e6 = g.extendSegmentByArc(e5,0,0,alpha_s/2);
 e7 = g.extendArcBySegment(e6,pi/2,OD/2-ID/2);
-e8 = g.extendArcByArc(e7,0,0,-alpha_s/2+gamma_so/2);
+e8 = g.extendSegmentByArc(e7,0,0,-alpha_s/2+gamma_so/2);
 
 indexList = [];
 xtmp = e2h.ptr.p1.x+ h0x;

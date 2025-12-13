@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % magnetic-transient two-dimensional tlcp
 % triangular lagrangian elements common properties
 

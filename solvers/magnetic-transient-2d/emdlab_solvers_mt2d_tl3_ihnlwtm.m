@@ -1,3 +1,4 @@
+% EMDLAB: Electrical Machines Design Laboratory
 % two dimensional nonlinear magnetic-transient solver
 % nonlinear solver: Newton-Raphson
 % first order triangular mesh
