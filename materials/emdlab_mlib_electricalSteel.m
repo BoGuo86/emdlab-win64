@@ -64,14 +64,19 @@ classdef emdlab_mlib_electricalSteel < emdlab_phy_material & handle
         
         function evalHBCurveRelatedQuantities(obj)
             
-            % getting and smoothing HB curve
-            [h, b] = smoothHBCurve(obj.hb_curve(2:end,:), 135);
             h = obj.hb_curve(2:end,1);
             b = obj.hb_curve(2:end,2);
-            
+
+            % smooth & extend HB curve
+            [h,b] = emdlab_flib_smooth_extend_hbcurve_exp(h, b, 100*h(end));
+            %[h,b] = emdlab_flib_smooth_extend_hbcurve_polyc(h, b, 10*h(end));
+            %[h,b] = emdlab_flib_smooth_extend_hbcurve_arctan(h, b, 10*h(end));
+
             % evaluation of nu
             v = (h ./ b);
-            [b, v] = extend_exponential(b, v, 1/4/pi/1e-7);
+%             [b, v] = extend_exponential(b, v, 1/4/pi/1e-7);
+            %[b, v] = emdlab_flib_smooth_extend_bvcurve_arctan(b,v,1/4/pi/1e-7);
+            %[b, v] = emdlab_flib_smooth_extend_bvcurve_exp(b,v,1/4/pi/1e-7);
             h = v .* b;
             
             % evaluation of BH, vB and dvdB
@@ -79,11 +84,11 @@ classdef emdlab_mlib_electricalSteel < emdlab_phy_material & handle
             b = [-flipud(b(2:end)); 0; b];
             v = [flipud(v(2:end)); v(1); v];
             
-            obj.BH = spline(b, h);
+            obj.BH = pchip(b, h);
             obj.dBdH = obj.BH;
             obj.dBdH.coefs = obj.dBdH.coefs * diag(3:-1:1, 1);
             
-            obj.vB = spline(b, v);
+            obj.vB = pchip(b, v);
             obj.dvdB = obj.vB;
             obj.dvdB.coefs = obj.dvdB.coefs * diag(3:-1:1, 1);
             

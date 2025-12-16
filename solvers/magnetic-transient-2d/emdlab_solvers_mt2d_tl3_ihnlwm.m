@@ -26,8 +26,9 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             obj.m = m;
             
             % default settings for solver
-            obj.solverSettings.relativeError = 1e-4;
-            obj.solverSettings.maxIteration = 20;
+            obj.solverSettings.relativeError = 1e-5;
+            obj.solverSettings.maxIteration = 50;
+            obj.solverSettings.relativeEnergyResidual = 1e-2;
             
             % set default properties of mesh zones
             mzNames = fieldnames(obj.m.mzs);
@@ -56,6 +57,16 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             end
             
             obj.solverSettings.relativeError = relativeError;
+            
+        end
+
+        function setSolverRelativeEnergyResidual(obj, relativeEnergyResidual)
+            
+            if relativeEnergyResidual < 0
+                error('relativeEnergyResidual must be a real positive number.');
+            end
+            
+            obj.solverSettings.relativeEnergyResidual = relativeEnergyResidual;
             
         end
         
@@ -462,6 +473,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             tic, disp('-------------------------------------------------------');
             
             % initials values
+            EResidual = inf;
             RelError = inf;
             Iterations = 0;
             xNgt = obj.m.Ne;
@@ -504,7 +516,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             
             % loop for non-linearity
             fprintf('Iter|Error   |Residual|time\n');
-            while (RelError > obj.solverSettings.relativeError) && (Iterations < obj.solverSettings.maxIteration)
+            while ((RelError > obj.solverSettings.relativeError) || (EResidual>obj.solverSettings.relativeEnergyResidual)) && (Iterations < obj.solverSettings.maxIteration) 
                 
                 % starting loop time
                 loopTime = tic;
@@ -514,6 +526,12 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 [obj.solverHistory.totalEnergy(end + 1),obj.solverHistory.totalConergy(end + 1)] = obj.evalTotalEnergyCoenergy;
                 Bk = sqrt(obj.results.Bxg.^2 + obj.results.Byg.^2);
                 
+                % calc energy residual
+                if length(obj.solverHistory.totalEnergy)>2
+                    EResidual = abs(obj.solverHistory.totalEnergy(end)-obj.solverHistory.totalEnergy(end-1))/...
+                        obj.solverHistory.totalEnergy(end);
+                end
+
                 mzNames = fieldnames(obj.m.mzs);
 
                 % updating nu
@@ -776,6 +794,11 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 cptr.current(end+1) = solVector(obj.m.Nn + obj.NcoilArms + cptr.ci);
                 cptr.fluxLinkage(end+1) = cptr.Qvec * obj.results.A;
                 cptr.inducedVoltage(end+1) = (cptr.fluxLinkage(end)-cptr.fluxLinkage(end-1))/DeltaTime;
+%                 if length(cptr.fluxLinkage)>2
+%                     cptr.inducedVoltage(end+1) = (cptr.fluxLinkage(end)-cptr.fluxLinkage(end-2))/(2*DeltaTime);
+%                 else
+%                     cptr.inducedVoltage(end+1) = (cptr.fluxLinkage(end)-cptr.fluxLinkage(end-1))/DeltaTime;
+%                 end
                 cptr.voltage(end+1) = cptr.Rdc * cptr.current(end) + cptr.inducedVoltage(end);
             end
 
@@ -794,6 +817,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             tic, disp('-------------------------------------------------------');
             
             % initials values
+            RelEResidual = inf;
             RelError = inf;
             Iterations = 0;
             xNgt = obj.m.Ne;
@@ -830,13 +854,13 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             % solver history
             obj.solverHistory.relativeError = [];
             obj.solverHistory.totalEnergy = [];
-            obj.solverHistory.totalConergy = [];     
+            obj.solverHistory.totalConergy = []; 
 
             alphaNR = 0.8;
             
             % loop for non-linearity
             fprintf('Iter|Error   |Residual|time\n');
-            while (RelError > obj.solverSettings.relativeError) && (Iterations < obj.solverSettings.maxIteration)
+            while ((RelError > obj.solverSettings.relativeError) || (RelEResidual>obj.solverSettings.relativeEnergyResidual)) && (Iterations < obj.solverSettings.maxIteration) 
                 
                 % starting loop time
                 loopTime = tic;
@@ -845,6 +869,12 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 obj.evalBe;
                 [obj.solverHistory.totalEnergy(end + 1),obj.solverHistory.totalConergy(end + 1)] = obj.evalTotalEnergyCoenergy;
                 Bk = sqrt(obj.results.Bxg.^2 + obj.results.Byg.^2);
+
+                % calculate relative energy residual
+                if length(obj.solverHistory.totalEnergy)>2
+                    RelEResidual = abs(obj.solverHistory.totalEnergy(end)-obj.solverHistory.totalEnergy(end-1))/...
+                        obj.solverHistory.totalEnergy(end);
+                end
                 
                 mzNames = fieldnames(obj.m.mzs);
 
@@ -935,6 +965,11 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                     cptr.current(end) = solVector(obj.m.Nn + obj.NcoilArms + cptr.ci);
                     cptr.fluxLinkage(end) = cptr.Qvec * obj.results.A;
                     cptr.inducedVoltage(end) = (cptr.fluxLinkage(end)-cptr.fluxLinkage(end-1))/DeltaTime;
+%                     if length(cptr.fluxLinkage)>2
+%                         cptr.inducedVoltage(end) = (cptr.fluxLinkage(end)-cptr.fluxLinkage(end-2))/(2*DeltaTime);
+%                     else
+%                         cptr.inducedVoltage(end) = (cptr.fluxLinkage(end)-cptr.fluxLinkage(end-1))/DeltaTime;
+%                     end  
                     cptr.voltage(end) = cptr.Rdc * cptr.current(end) + cptr.inducedVoltage(end);
                 end
                 
@@ -947,8 +982,8 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                     addpoints(er, Iterations+1, log10(RelError));
                     cAxis.XLim(2) = Iterations+2;
                     drawnow;
-                end
-                
+                end                
+
                 % solver history
                 obj.solverHistory.relativeError(end + 1) = RelError;
                 

@@ -21,7 +21,8 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwtm < handle & emdlab_solvers_mt2d_tlcp
             
             % default settings for solver
             obj.solverSettings.relativeError = 1e-4;
-            obj.solverSettings.maxIteration = 20;
+            obj.solverSettings.maxIteration = 50;
+            obj.solverSettings.relativeEnergyResidual = 1e-2;
             
             % set default properties of mesh zones
             mzNames = fieldnames(obj.m.mzs);
@@ -50,6 +51,16 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwtm < handle & emdlab_solvers_mt2d_tlcp
             end
             
             obj.solverSettings.relativeError = relativeError;
+            
+        end
+
+        function setSolverRelativeEnergyResidual(obj, relativeEnergyResidual)
+            
+            if relativeEnergyResidual < 0
+                error('relativeEnergyResidual must be a real positive number.');
+            end
+            
+            obj.solverSettings.relativeEnergyResidual = relativeEnergyResidual;
             
         end
         
@@ -390,6 +401,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwtm < handle & emdlab_solvers_mt2d_tlcp
             tic, disp('-------------------------------------------------------');
             
             % initials values
+            RelEResidual = inf;
             RelError = inf;
             Iterations = 0;
             xNgt = obj.m.Ne;
@@ -432,7 +444,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwtm < handle & emdlab_solvers_mt2d_tlcp
             
             % loop for non-linearity
             fprintf('Iter|Error   |Residual|time\n');
-            while (RelError > obj.solverSettings.relativeError) && (Iterations < obj.solverSettings.maxIteration)
+            while ((RelError > obj.solverSettings.relativeError) || (RelEResidual>obj.solverSettings.relativeEnergyResidual)) && (Iterations < obj.solverSettings.maxIteration) 
                 
                 % starting loop time
                 loopTime = tic;
@@ -441,7 +453,13 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwtm < handle & emdlab_solvers_mt2d_tlcp
                 obj.evalBe;
                 [obj.solverHistory.totalEnergy(end + 1),obj.solverHistory.totalConergy(end + 1)] = obj.evalTotalEnergyCoenergy;
                 Bk = sqrt(obj.results.Bxg.^2 + obj.results.Byg.^2);
-                
+
+                % calculate relative energy residual
+                if length(obj.solverHistory.totalEnergy)>2
+                    RelEResidual = abs(obj.solverHistory.totalEnergy(end)-obj.solverHistory.totalEnergy(end-1))/...
+                        obj.solverHistory.totalEnergy(end);
+                end
+
                 mzNames = fieldnames(obj.m.mzs);
 
                 % updating nu

@@ -1,13 +1,13 @@
-function emdlab_render_makeAnimation(path, index, delayTime)
+function emdlab_render_makeAnimation(path, NFrames, delayTime)
 
 % set default speed
 if nargin<3, delayTime = 0.1; end
 
-filename = 'animated.gif';  % Output GIF file
+filename = 'animation.gif';  % Output GIF file
 
-for k = 1:index
+for k = 1:NFrames
     % Read the image
-    img = imread(sprintf('%s\\image-%d.png', path, k));  % or use full path if needed
+    img = imread(sprintf('%s\\frame-%d.png', path, k));  % or use full path if needed
 
     % Convert to indexed image
     [imind, cm] = rgb2ind(img, 256);
@@ -19,5 +19,7 @@ for k = 1:index
         imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append', 'DelayTime', delayTime);
     end
 end
+
+delete(sprintf('%s\\frame-*.png', path))
 
 end

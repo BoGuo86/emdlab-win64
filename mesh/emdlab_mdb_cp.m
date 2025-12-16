@@ -1,4 +1,5 @@
-% common properties for all mesh databases
+% EMDLAB: Electrical Machines Design Laboratory
+% common properties for all mesh database classes
 
 classdef emdlab_mdb_cp < handle
 
@@ -72,8 +73,17 @@ classdef emdlab_mdb_cp < handle
 
         function setMeshZoneColor(obj, mzName, R, G, B)
 
-            mzName = obj.checkMeshZoneExistence(mzName);
-            obj.mzs.(mzName).color = [R,G,B]/255;
+            if ischar(mzName)
+                mzName = obj.checkMeshZoneExistence(mzName);
+                obj.mzs.(mzName).color = [R,G,B]/255;
+            elseif isstring(mzName)
+                for i = 1:numel(mzName)
+                    mzNameChar = obj.checkMeshZoneExistence(mzName(i));
+                    obj.mzs.(mzNameChar).color = [R,G,B]/255;
+                end
+            else
+                error('Wrong input type, mzName must be char or string');
+            end
 
         end
 
