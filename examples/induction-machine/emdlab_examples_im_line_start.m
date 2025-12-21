@@ -1,4 +1,6 @@
-% note: transient voltage-fed line-start simulation of an induction motor
+%{
+note: transient voltage-fed line-start simulation of an induction motor
+%}
 
 % initialization
 clc;
@@ -6,7 +8,7 @@ clear;
 close all;
 addpath(genpath('C:\emdlab-win64'));
 
-% design variables [mm]
+% dimensions & parameters
 gv_ISD = 74;
 gv_OSD = 125;
 gv_Lstk = 70;
@@ -29,15 +31,16 @@ gv_Vs = 325;
 
 % define geometry data base
 g = emdlab_g2d_db;
+
 % add geometry from library
 emdlab_g2d_lib_tc3(g, gv_ISD, gv_OSD, gv_Ns, gv_wst, gv_dss, gv_bs0, gv_hs0, gv_stta, 'stator', 'sc', 'sap');
 emdlab_g2d_lib_tc4(g, gv_Dsh, gv_ISD-2*gv_g, gv_Nr, gv_wrt, gv_drs, gv_br0, gv_hr0, gv_rtta, 'rotor', 'rbar', 'rap');
 
-% mesh generation
-% mesh density function
+% setting the wireframe mesh by mesh size function
 f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2-gv_g,gv_OSD/2], [3,gv_g,3], r, 'linear','extrap');
-% set mesh density function
 g.setMeshLengthByRadialFunction(f_mesh);
+
+% mesh generation
 m = g.generateMesh('mm');
 m.joinMeshZones('rb','rbar','rap');
 m.setMeshZoneColor('rb',0,192,232);
@@ -101,7 +104,7 @@ s.setAzBC(m.getfbn, 0);
 
 % disable solver monitor
 s.setMonitor(0);
-s.setSolverRelativeError(1e-2);
+s.setSolverRelativeError(1e-3);
 
 % two vectors to store torque and speed
 te = 0;

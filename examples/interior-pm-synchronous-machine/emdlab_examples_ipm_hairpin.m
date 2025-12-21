@@ -3,6 +3,7 @@ clc;
 clear;
 close all;
 addpath(genpath('C:\emdlab-win64'));
+
 % design parameters
 gv_ISD = 95;
 gv_OSD = 150;
@@ -15,20 +16,25 @@ gv_p = 6;
 gv_Hc = -922100;
 % dependent variables
 alpha_p = 2*pi/gv_p;
+
 % generator geometry
 g = emdlab_g2d_db;
+
 % mesh density function
 f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2,gv_OSD/2], [1.5,gv_g,2], r, 'linear', 'extrap');
 emdlab_g2d_lib_tc9(g,gv_ISD,gv_OSD,gv_Ns,gv_Nc,2.8,1.8,1.5,0.8,15,0.3,0.3,'stator','sc','sap');
 emdlab_g2d_lib_rm_ipm1(g, gv_Dsh, gv_ISD-2*gv_g, gv_p, 0.25, [0.8,1], [1]*.8, [0.6,0.7], [1,1]*0.5, 0.6, 'rotor', 'magnet', 'rap');
 g.setMeshLengthByRadialFunction(f_mesh)
 m = g.generateMesh('mg0');
+
 % add materials
 m.addMaterial('m330', emdlab_mlib_es_M300_35A);
 m.addMaterial('copper', emdlab_mlib_copper);
+
 % set materials
 m.setMaterial('rotor','m330');
 m.setMaterial('stator','m330');
+
 % generate full mesh
 m.aux_cmxjcrj('stator',gv_Ns);
 m.aux_cmxjcrj('sap',gv_Ns);
@@ -42,8 +48,10 @@ m.joinMeshZones('magnetc', 'magnetc'+string(1:2))
 m.aux_cmxjcr('magnetc',gv_p);
 m.joinMeshZones('magnets', 'magnets'+string(1:2))
 m.aux_cmxcr('magnets',gv_p);
+
 % add air gap mesh
 m.aux_addCircularAirGap('ag', 0,0,gv_ISD/2-gv_g,0,0,gv_ISD/2,2);
+
 % getting an instance of solver object
 s = emdlab_solvers_ms2d_tl3_ihnl(m);
 s.setLengthUnit('mm');
@@ -52,6 +60,7 @@ magVector = [1,0];
 u1 = [cos(alpha_p/2),sin(alpha_p/2)];
 u1s = emdlab_g2d_rotatePoints(u1,-pi/2);
 u2s = emdlab_g2d_rotatePoints([u1(1),-u1(2)],pi/2);
+
 % set magnetization
 for i = 1:2:gv_p
     magVector1 = emdlab_g2d_rotatePoints(magVector,(i-1)*alpha_p);
@@ -82,7 +91,7 @@ end
 % apply boundary conditions
 s.setAzBC(m.getfbn, 0);
 % solve and plot results
-s.setSolverRelativeError(1e-5);
+s.setSolverRelativeError(1e-3);
 s.solve;
 g.showSketch;
 m.showg;

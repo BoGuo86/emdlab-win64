@@ -1,5 +1,7 @@
-% note: calculation of the rotor's field of a single-rotor single-stator
-% axial-flux permanent magnet motor
+%{
+note: calculation of the rotor field of a single-rotor single-stator
+axial-flux permanent magnet motor
+%}
 
 % initialization
 clc;
@@ -44,10 +46,11 @@ g = emdlab_g2d_db;
 emdlab_g2d_lib_tc51(g,gv_g/2,gv_wst,gv_wss,gv_dss,gv_dsy,gv_bs0,gv_hs0,gv_tta,gv_paperT,gv_bw0,'stator','sc','sap');
 emdlab_g2d_lib_rm_spm51(g,-gv_g/2,gv_dm,gv_dry,gv_taup,gv_embrace,'rotor','magnet','rap');
 
-% mesh generation
-% mesh density function
+% setting the wireframe mesh by mesh size function
 f_mesh = @(y) interp1([-gv_g-gv_dm-gv_dry,0,gv_g+gv_dss+gv_dsy],[gv_dry/2,gv_g,gv_dsy/2],y, 'linear','extrap');
 g.setMeshLengthByYFunction(f_mesh);
+
+% mesh generation
 m = g.generateMesh('mg0');
 
 % add materials
@@ -68,7 +71,6 @@ m.aux_cmyjcshj('rap',gv_p,gv_taup,0);
 m.aux_cmyjcsh('magnet',gv_p,gv_taup,0);
 
 % add airgap mesh
-% generate air gap mesh
 m.aux_addLineAirGap('ag',0,0,1,0,gv_g,2)
 
 % getting an instance of solver object
@@ -93,9 +95,10 @@ s.setAzBC([k1;k2],0);
 [km,ks] = m.splitShift(setdiff(m.getfbn,[k1;k2]), [gv_L,0]);
 s.setEvenPeriodicBC(km,ks);
 
-% solve and plot results
-s.setSolverRelativeError(1e-5);
-s.solve
+% run solver
+s.solve;
+
+% visualize solution
 s.gui;
 
 

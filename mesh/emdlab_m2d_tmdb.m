@@ -2519,7 +2519,7 @@ classdef emdlab_m2d_tmdb < handle & emdlab_g2d_constants & matlab.mixin.Copyable
                 obj.crmz([tmp, num2str(i + 3)], [tmp, num2str(i + 1)], tau_t);
             end
 
-            tmp = getlist(tmp, 1:2 * Ns);
+            tmp =tmp + string( 1:2 * Ns);
             obj.jmzs(mzname, tmp{:});
             % change states
             obj.makeFalse_isGlobalMeshGenerated;

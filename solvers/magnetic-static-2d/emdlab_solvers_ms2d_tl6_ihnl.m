@@ -29,9 +29,9 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             obj.m = m;
 
             % default settings for solver
-            obj.solverSettings.relativeError = 1e-4;
+            obj.solverSettings.relativeError = 1e-8;
             obj.solverSettings.maxIteration = 20;
-            obj.solverSettings.relativeEnergyResidual = 1e-2;
+            obj.solverSettings.relativeEnergyResidual = 1e-3;
 
             % set default properties of mzs
             mzNames = fieldnames(obj.m.mzs);
@@ -312,7 +312,7 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             % updating dnudB2
             dnudB2 = zeros(3, xNgt);
 
-            alphaNR = 0.8;
+            alphaNR = 0.9;
 
             % loop for non-linearity
             fprintf('Iter|Error   |Residual|time\n');
@@ -420,10 +420,18 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
                 % go to next iteration
                 Iterations = Iterations + 1;
 
-                if alphaNR == 0.8
-                    alphaNR = 0.7 + 0.2*2*(rand-0.5);
-                else
-                    alphaNR = 0.8;
+%                 if alphaNR == 0.9
+%                     alphaNR = 0.7 + 0.2*2*(rand-0.5);
+%                 else
+%                     alphaNR = 0.9;
+%                 end
+
+                if length(obj.solverHistory.relativeError)>2
+                    if obj.solverHistory.relativeError(end) > obj.solverHistory.relativeError(end-1)
+                        alphaNR = 0.7 + 0.3*2*(rand-0.5);
+                    else
+                        alphaNR = 0.9;
+                    end
                 end
 
             end
@@ -469,13 +477,13 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
         % solver history plots
         function varargout = plotRelativeError(obj, varargin)
 
-            [f,ax] = emdlab_flib_fax(varargin{:});            
+            [f,ax] = emdlab_flib_fax(varargin{:});
             title(ax, 'emdlab -> ms2d_ihnl solver');
-            plot(1:obj.solverHistory.iterations, ...
-                log10(obj.solverHistory.relativeError), 'color', 'r', 'Linewidth', 1.2, ...
+            semilogy(1:obj.solverHistory.iterations, ...
+                obj.solverHistory.relativeError, 'color', 'r', 'Linewidth', 1.2, ...
                 'marker', 's', 'MarkerEdgeColor', 'b', 'parent', ax);
             title('Relative Error (|dA|/|A|)')
-            ylabel('log10(|dA|/|A|)')
+            ylabel('|dA|/|A|')
             xlabel('Iteration Number')
             if obj.solverHistory.iterations == 1, return; end
             set(gca, 'xlim', [1, obj.solverHistory.iterations]);
@@ -485,7 +493,7 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             elseif nargout == 2, varargout{1} = f; varargout{2} = ax;
             elseif nargout > 1, error('Too many output argument.');
             end
-            
+
         end
         
         function varargout = plotEnergy(obj, varargin)
@@ -534,12 +542,12 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
 
             [f,ax] = emdlab_flib_fax(varargin{:});
             title(ax,'emdlab -> ms2d_ihnl solver');
-            relERERR = log10(abs(diff(obj.solverHistory.totalEnergy))./obj.solverHistory.totalEnergy(2:end));
-            plot(2:obj.solverHistory.iterations, ...
+            relERERR = abs(diff(obj.solverHistory.totalEnergy))./obj.solverHistory.totalEnergy(2:end);
+            semilogy(2:obj.solverHistory.iterations, ...
                 relERERR, 'color', 'r', 'Linewidth', 1.2, ...
                 'marker', 's', 'MarkerEdgeColor', 'b');
-            title('Residual of Energy')
-            ylabel('log10(Relative Energy Residual)')
+            title('Relative Energy Residual')
+            ylabel('Relative Energy Residual')
             xlabel('Iteration Number')
             if obj.solverHistory.iterations == 1, return; end
             set(gca, 'xlim', [1, obj.solverHistory.iterations]);

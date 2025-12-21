@@ -150,6 +150,7 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
             obj.m.mzs.(mzName).props.isMagnetized = false;
             obj.m.mzs.(mzName).props.isEddyZone = false;
             obj.m.mzs.(mzName).props.isMoving = false;
+            obj.m.mzs.(mzName).props.isCoreLossActivated = false;
             obj.makeFalse_isElementDataAssigned;
 
         end
@@ -661,26 +662,70 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
             obj.movingRegions.(movingRegionName).meshZones = meshZoneNames;
             obj.movingRegions.(movingRegionName).mi = obj.NmovingRegions;
             obj.movingRegions.(movingRegionName).interface = interfaceMeshZone;
-            obj.setMoving(meshZoneNames);
+            obj.setMoving(movingRegionName, meshZoneNames);
 
         end
 
-        function setMoving(obj, varargin)
+        function setMoving(obj, movingRegionName, varargin)
             % loop over inputs
             for i = 1:numel(varargin)
                 if ischar(varargin{i})
                     mzName = obj.m.checkMeshZoneExistence(varargin{i});
                     obj.m.mzs.(mzName).props.isMoving = true;
+                    obj.m.mzs.(mzName).props.movingRegionName = movingRegionName;
                 elseif isvector(varargin{i}) && isstring(varargin{i})
                     for j = 1:numel(varargin{i})
                         mzName = char(varargin{i}(j));
                         mzName = obj.m.checkMeshZoneExistence(mzName);
                         obj.m.mzs.(mzName).props.isMoving = true;
+                        obj.m.mzs.(mzName).props.movingRegionName = movingRegionName;
                     end
                 else
                     error('The input class type must be <char> or <string>.');
                 end
             end
+        end
+
+        % activate core loss calculation for specfied mesh zones
+        function activateCoreLossCalculation(obj, varargin)
+
+            % loop over inputs
+            for i = 1:numel(varargin)
+                if ischar(varargin{i})
+                    mzName = obj.m.checkMeshZoneExistence(varargin{i});
+                    obj.m.mzs.(mzName).props.isCoreLossActivated = true;
+                elseif isvector(varargin{i}) && isstring(varargin{i})
+                    for j = 1:numel(varargin{i})
+                        mzName = char(varargin{i}(j));
+                        mzName = obj.m.checkMeshZoneExistence(mzName);
+                        obj.m.mzs.(mzName).props.isCoreLossActivated = true;
+                    end
+                else
+                    error('The input class type must be <char> or <string>.');
+                end
+            end
+
+        end
+
+        % deactivate core loss calculation for specfied mesh zones
+        function deactivateCoreLossCalculation(obj, varargin)
+
+            % loop over inputs
+            for i = 1:numel(varargin)
+                if ischar(varargin{i})
+                    mzName = obj.m.checkMeshZoneExistence(varargin{i});
+                    obj.m.mzs.(mzName).props.isCoreLossActivated = false;
+                elseif isvector(varargin{i}) && isstring(varargin{i})
+                    for j = 1:numel(varargin{i})
+                        mzName = char(varargin{i}(j));
+                        mzName = obj.m.checkMeshZoneExistence(mzName);
+                        obj.m.mzs.(mzName).props.isCoreLossActivated = false;
+                    end
+                else
+                    error('The input class type must be <char> or <string>.');
+                end
+            end
+
         end
 
         %% Boundary Conditions
@@ -1296,6 +1341,49 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
 
         end
 
+        function varargout = plotCoreLossDensity(obj, mzName, ampB)
+
+            % amplitude of the B at mesh points
+            ti = obj.m.getti(mzName);
+            mzptr = obj.m.mzs.(mzName);
+            eziptr = obj.m.ezi(:,mzptr.zi);
+            ampB = repmat(ampB,3,1);
+            [ampB, ~] = emdlab_m2d_tl3_evalBnSmooth(obj.m.cl(eziptr,:), ampB, ampB, obj.m.gea(eziptr), obj.m.Nn);
+
+            % plot using patch function
+            f = figure;
+            ax = axes(f);
+            f.Name = 'Core loss density';
+
+            xdata = obj.m.nodes(:,1);
+            ydata = obj.m.nodes(:,2);
+            patch('XData', xdata(obj.m.cl(ti, [1,2,3]))', 'YData', ydata(obj.m.cl(ti, [1,2,3]))', ...
+                'CData', ampB, 'FaceColor', 'interp', ...
+                'EdgeColor', 'none', 'parent', ax);
+
+            index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
+            patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
+                'EdgeColor', 'k');
+
+            colormap(jet(15));
+            cb = colorbar;
+            cb.FontName = 'Verdana';
+            cb.FontSize = 12;
+            cb.Label.String = 'Loss Density [W/m^3]';
+
+            axis off equal;
+            zoom on;
+            set(ax, 'clipping', 'off');
+            set(f, 'Visible', 'on');
+
+            if nargout == 1
+                varargout{1} = f;
+            elseif nargout > 1
+                error('Too many output argument.');
+            end
+
+        end
+
         function varargout = plotBmagF(obj, N, varargin)
 
             if nargin<2, N = 14; end
@@ -1672,6 +1760,11 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
             if nargin < 5, N = 1000; end
             [Hr, Ht, t] = obj.getFQrFQtOnCircle(xc, yc, r, N, 'HSmooth');
 
+        end
+
+        function [Bx,By] = getMeshZoneBxgByg(obj, mzName)
+            Bx = obj.results.Bxg(obj.m.ezi(:,obj.m.mzs.(mzName).zi));
+            By = obj.results.Byg(obj.m.ezi(:,obj.m.mzs.(mzName).zi));
         end
 
     end
