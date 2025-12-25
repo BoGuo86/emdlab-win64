@@ -102,10 +102,6 @@ s.defineMovingRegion('moving_1', ["rotor", "rb"+string(1:gv_Nr)], 'ag');
 % apply boundary conditions
 s.setAzBC(m.getfbn, 0);
 
-% disable solver monitor
-s.setMonitor(0);
-s.setSolverRelativeError(1e-3);
-
 % two vectors to store torque and speed
 te = 0;
 te_mst = 0;
@@ -153,3 +149,4 @@ plot(s.simTime, Te_dq);
 xlabel('Time [s]'); ylabel('Electric torque [Nm]');
 legend('Arkkio', 'MST', 'Te_{dq}');
 hold off;
+

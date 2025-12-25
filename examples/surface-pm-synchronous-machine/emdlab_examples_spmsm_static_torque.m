@@ -33,7 +33,7 @@ emdlab_g2d_lib_rm_spm1(g, gv_Dsh, gv_ISD-2*gv_g, gv_p, gv_dm, gv_embrace, 'rotor
 % setting the wireframe mesh by mesh size function
 f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2-gv_dm-gv_g,gv_ISD/2,gv_OSD/2], [3,1,0.5,2], r, 'linear','extrap');
 g.setMeshLengthByRadialFunction(f_mesh);
-m = g.generateMesh('mg0');
+m = g.generateMesh('mm');
 
 % add materials
 m.addMaterial('m330', emdlab_mlib_es_M330_35A);

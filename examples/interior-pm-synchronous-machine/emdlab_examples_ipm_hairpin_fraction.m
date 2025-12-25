@@ -64,7 +64,7 @@ fb_index = setdiff(m.getfbn,index);
 [km,ks] = m.splitPeriodic(fb_index, 2*pi/gv_p);
 s.setOddPeriodicBC(km',ks');
 % solve and plot results
-s.setSolverRelativeError(1e-4);
+s.assignEdata(20)
 s.solve;
 s.gui;
 

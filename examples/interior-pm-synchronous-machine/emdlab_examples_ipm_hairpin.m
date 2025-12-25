@@ -91,7 +91,7 @@ end
 % apply boundary conditions
 s.setAzBC(m.getfbn, 0);
 % solve and plot results
-s.setSolverRelativeError(1e-3);
+s.assignEdata(20)
 s.solve;
 g.showSketch;
 m.showg;

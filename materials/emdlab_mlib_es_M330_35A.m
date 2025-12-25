@@ -11,7 +11,7 @@ classdef emdlab_mlib_es_M330_35A < handle & emdlab_mlib_electricalSteel
             obj.ElectricPermitivity.value = 8.854e-12;    % F/m (≈ vacuum, usually ignored for conductors)
             obj.ElectricConductivity.value = 1030000;       % S/m
 
-            obj.MassDensity.value = 7650 % kg/m³
+            obj.MassDensity.value = 7650; % kg/m³
             obj.YoungModulus.value = 2.0e11;              % Pa (≈ 200 GPa)
             obj.PoissonRatio.value = 0.29;                % dimensionless
             

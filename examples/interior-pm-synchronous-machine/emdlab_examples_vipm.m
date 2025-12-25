@@ -93,6 +93,7 @@ end
 s.setAzBC(m.getfbn, 0);
 
 % run solver
+s.assignEdata(20);
 s.solve;
 
 % visualize solution

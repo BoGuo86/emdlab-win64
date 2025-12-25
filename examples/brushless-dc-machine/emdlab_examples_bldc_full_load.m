@@ -129,9 +129,6 @@ s.defineMovingRegion('moving_1', ["rotor", "rap", "magnet"+string(1:gv_p)], 'ag'
 % apply boundary conditions
 s.setAzBC(m.getfbn, 0);
 
-% disable solver monitor
-s.setMonitor(0);
-
 % synchronous speed
 wm = gv_rpm*pi/30;
 
@@ -173,7 +170,7 @@ for i = 1:Nt
     te_mst(i+1) = s.evalTorqueByMST3(0,0,gv_ISD/2-gv_g/2,gv_g);
 
 end
-
+s.forcePeriodicCoilVoltages;
 % plot results
 s.plotCoilCurrents;
 s.plotCoilFluxLinkages;

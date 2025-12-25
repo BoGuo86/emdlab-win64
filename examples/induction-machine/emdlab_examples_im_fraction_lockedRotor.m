@@ -67,7 +67,7 @@ m.aux_cmxjcr('rb',gv_Nr/2,2*pi/gv_Nr)
 m.aux_addArcAirGap('ag',0,0,gv_ISD/2-gv_gap,gv_ISD/2,2);
 
 % getting an instance of solver object
-s = emdlab_solvers_mt2d_tl3_ihnlwtm(m);
+s = emdlab_solvers_mt2d_tl3_ihnlwm(m);
 s.setLengthUnit('mm');
 s.setDepth(gv_Lstk);
 
@@ -99,7 +99,6 @@ s.setAzBC(index,0);
 fb_index = setdiff(m.getfbn,index);
 [km,ks] = m.splitPeriodic(fb_index, pi);
 s.setEvenPeriodicBC(km,ks);
-s.setSolverRelativeError(1e-2);
 
 s.defineStarConnection('y1', 'phaseA', 'phaseB', 'phaseC')
 s.defineCage('cage_1', 'rb' + string(1:13));

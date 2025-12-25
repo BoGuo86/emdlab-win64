@@ -96,10 +96,7 @@ s.addMeshZone2Coil('phaseA','sca25',278,1);
 s.setCoilCurrent('phaseA', 3.6);
 % apply boundary conditions
 s.setAzBC(m.getfbn, 0);
-% solve and plot results
-s.setSolverRelativeError(1e-4);
-s.setMonitor(0);
-s.setSolverMaxIteration(100);
+% solve and return results
 s.solve;
 
 [~,Wcoenergy] = s.evalTotalEnergyCoenergy;

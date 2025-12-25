@@ -93,7 +93,6 @@ s.setCoilCurrent('phaseC', -gv_Iph*1.41/2);
 s.setAzBC(m.getfbn, 0);
 
 % run solver
-s.setSolverRelativeError(1e-4);
 s.solve;
 
 % visualize solution

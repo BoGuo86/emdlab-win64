@@ -27,7 +27,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
 
             % default settings for solver
             obj.solverSettings.relativeError = 1e-8;
-            obj.solverSettings.maxIteration = 1000;
+            obj.solverSettings.maxIteration = 100;
             obj.solverSettings.relativeEnergyResidual = 1e-3;
 
             % set default properties of mesh zones
@@ -78,7 +78,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
         end
 
         % assign elements data
-        function assignEdata(obj, InitNur)
+        function assignEdata(obj, initialRelativePermeability)
 
             % check states
             if obj.isElementDataAssigned, return; end
@@ -117,9 +117,9 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
 
                     obj.edata.areAllLinear = false;
                     if nargin == 2
-                        mzptr.props.MagneticReluctivity(:) = InitNur * obj.pcts.nu0;
+                        mzptr.props.MagneticReluctivity(:) = obj.pcts.nu0 / initialRelativePermeability;
                     else
-                        mzptr.props.MagneticReluctivity(:) = 0.001 * obj.pcts.nu0;
+                        mzptr.props.MagneticReluctivity(:) = obj.pcts.nu0 / 500;
                     end
 
                 end
@@ -410,42 +410,39 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 K21, obj.mtcs.K22, obj.mtcs.K23
                 K31, obj.mtcs.K32, K33];
             F = [F1;F2;F3];
-            if ~any(F), return; end
 
-            tic, disp('-------------------------------------------------------');
+                % imposing boundary conditions on [K] and [F]
+                % dbcs
+                if obj.bcs.Nd
+                    F(obj.bcs.iD) = obj.bcs.vD;
+                    K(obj.bcs.iD, :) = sparse(1:obj.bcs.Ndbcs, obj.bcs.iD, ones(1, obj.bcs.Ndbcs), obj.bcs.Ndbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
+                end
 
-            % imposing boundary conditions on [K] and [F]
-            % dbcs
-            if obj.bcs.Nd
-                F(obj.bcs.iD) = obj.bcs.vD;
-                K(obj.bcs.iD, :) = sparse(1:obj.bcs.Ndbcs, obj.bcs.iD, ones(1, obj.bcs.Ndbcs), obj.bcs.Ndbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
-            end
+                % opbcs
+                if obj.bcs.Nop
+                    F(obj.bcs.mOP) = F(obj.bcs.mOP) - F(obj.bcs.sOP);
+                    F(obj.bcs.sOP) = 0;
+                    K(obj.bcs.mOP, :) = K(obj.bcs.mOP, :) - K(obj.bcs.sOP, :);
+                    K(obj.bcs.sOP, :) = sparse([1:obj.bcs.Nopbcs, 1:obj.bcs.Nopbcs], ...
+                        [obj.bcs.mOP; obj.bcs.sOP], ones(1, 2 * obj.bcs.Nopbcs), obj.bcs.Nopbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
+                end
 
-            % opbcs
-            if obj.bcs.Nop
-                F(obj.bcs.mOP) = F(obj.bcs.mOP) - F(obj.bcs.sOP);
-                F(obj.bcs.sOP) = 0;
-                K(obj.bcs.mOP, :) = K(obj.bcs.mOP, :) - K(obj.bcs.sOP, :);
-                K(obj.bcs.sOP, :) = sparse([1:obj.bcs.Nopbcs, 1:obj.bcs.Nopbcs], ...
-                    [obj.bcs.mOP; obj.bcs.sOP], ones(1, 2 * obj.bcs.Nopbcs), obj.bcs.Nopbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
-            end
+                % epbcs
+                if obj.bcs.Nep
+                    F(obj.bcs.mEP) = F(obj.bcs.mEP) + F(obj.bcs.sEP);
+                    F(obj.bcs.sEP) = 0;
+                    K(obj.bcs.mEP, :) = K(obj.bcs.mEP, :) + K(obj.bcs.sEP, :);
+                    K(obj.bcs.sEP, :) = sparse([1:obj.bcs.Nepbcs, 1:obj.bcs.Nepbcs], ...
+                        [obj.bcs.mEP; obj.bcs.sEP], [ones(1, obj.bcs.Nepbcs), -ones(1, obj.bcs.Nepbcs)], obj.bcs.Nepbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
+                end
 
-            % epbcs
-            if obj.bcs.Nep
-                F(obj.bcs.mEP) = F(obj.bcs.mEP) + F(obj.bcs.sEP);
-                F(obj.bcs.sEP) = 0;
-                K(obj.bcs.mEP, :) = K(obj.bcs.mEP, :) + K(obj.bcs.sEP, :);
-                K(obj.bcs.sEP, :) = sparse([1:obj.bcs.Nepbcs, 1:obj.bcs.Nepbcs], ...
-                    [obj.bcs.mEP; obj.bcs.sEP], [ones(1, obj.bcs.Nepbcs), -ones(1, obj.bcs.Nepbcs)], obj.bcs.Nepbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
-            end
+                disp('All boundary condition imposed.');
+                toc, disp('-------------------------------------------------------');
 
-            disp('All boundary condition imposed.');
-            toc, disp('-------------------------------------------------------');
+                % solving [K][U] = [F]
+                tic, disp('-------------------------------------------------------');
 
-            % solving [K][U] = [F]
-            tic, disp('-------------------------------------------------------');
-
-            solVector = full(K\F);
+                solVector = full(K\F);
             obj.results.A = solVector(1:obj.m.Nn);
             obj.results.VICoilArms = solVector(obj.m.Nn+1:obj.m.Nn+obj.NcoilArms);
             obj.results.ICoils = solVector(obj.m.Nn+obj.NcoilArms+1:obj.m.Nn+obj.NcoilArms+obj.Ncoils);
@@ -465,15 +462,19 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             obj.evalBe;
 
             % getting mesh zones
-            mzsName = fieldnames(obj.m.mzs)';
+            mzsName = string(fieldnames(obj.m.mzs)');
 
-            % save field data for core loss calculation
+            % save field data for core loss & magnet eddy current loss calculation
             for mzName = mzsName
 
-                mzptr = obj.m.mzs.(char(mzName));
+                mzptr = obj.m.mzs.(mzName);
                 if mzptr.props.isCoreLossActivated
                     mzptr.props.Bxg = obj.results.Bxg(obj.m.ezi(:,mzptr.zi));
                     mzptr.props.Byg = obj.results.Byg(obj.m.ezi(:,mzptr.zi));
+                end
+
+                if mzptr.props.isEddyZone
+                    mzptr.props.Az = obj.results.A(mzptr.l2g);
                 end
 
             end
@@ -506,7 +507,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             if obj.monitorResiduals
 
                 ERF = gcf; cla;
-                set(ERF, 'Name', 'mt2d_tl3_ihnlwtm solver', 'WindowStyle', 'Normal');
+                set(ERF, 'Name', 'mt2d_tl3_ihnlwm solver', 'WindowStyle', 'Normal');
                 er = animatedline('color', 'r', 'Linewidth', 1.2, 'Marker', 's', 'MarkerEdgeColor','k');
                 title("Progress: " + num2str(0) + "%");
                 ylabel('log10(||dA||/||A||)');
@@ -543,7 +544,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 % evaluation of B2 for each elements
                 obj.evalBe;
                 [obj.solverHistory.totalEnergy(end + 1),obj.solverHistory.totalConergy(end + 1)] = obj.evalTotalEnergyCoenergy;
-                Bk = sqrt(obj.results.Bxg.^2 + obj.results.Byg.^2);
+                Bk = obj.results.Bxg.^2 + obj.results.Byg.^2;
 
                 % calc energy residual
                 if length(obj.solverHistory.totalEnergy)>2
@@ -553,19 +554,46 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
 
                 mzNames = fieldnames(obj.m.mzs);
 
-                % updating nu
+                %                 % updating nu
+                %                 for i = 1:obj.m.Nmzs
+                %                     mzptr = obj.m.mzs.(mzNames{i});
+                %
+                %                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
+                %                         obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
+                %                             ppval(obj.m.mts.(mzptr.material).vB, ...
+                %                             Bk(obj.m.ezi(:, mzptr.zi)));
+                %                     end
+                %
+                %                 end
+                %
+                %                 % updating dnudB2
+                %                 dnudB2 = zeros(1, xNgt);
+                %
+                %                 for i = 1:obj.m.Nmzs
+                %                     mzptr = obj.m.mzs.(mzNames{i});
+                %
+                %                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
+                %                         dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
+                %                             ppval(obj.m.mts.(mzptr.material).dvdB, ...
+                %                             Bk(obj.m.ezi(:, mzptr.zi))) ./ ...
+                %                             (2 * Bk(obj.m.ezi(:, mzptr.zi)));
+                %                     end
+                %
+                %                 end
+
+                % updating nu -> B2
                 for i = 1:obj.m.Nmzs
                     mzptr = obj.m.mzs.(mzNames{i});
 
                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
                         obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).vB, ...
+                            ppval(obj.m.mts.(mzptr.material).vB2, ...
                             Bk(obj.m.ezi(:, mzptr.zi)));
                     end
 
                 end
 
-                % updating dnudB2
+                % updating dnudB2 -> B2
                 dnudB2 = zeros(1, xNgt);
 
                 for i = 1:obj.m.Nmzs
@@ -573,9 +601,8 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
 
                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
                         dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).dvdB, ...
-                            Bk(obj.m.ezi(:, mzptr.zi))) ./ ...
-                            (2 * Bk(obj.m.ezi(:, mzptr.zi)));
+                            ppval(obj.m.mts.(mzptr.material).dvdB2, ...
+                            Bk(obj.m.ezi(:, mzptr.zi)));
                     end
 
                 end
@@ -687,6 +714,10 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 if mzptr.props.isCoreLossActivated
                     mzptr.props.Bxg(end,:) = obj.results.Bxg(obj.m.ezi(:,mzptr.zi));
                     mzptr.props.Byg(end,:) = obj.results.Byg(obj.m.ezi(:,mzptr.zi));
+                end
+
+                if mzptr.props.isEddyZone
+                    mzptr.props.Az(:,end) = obj.results.A(mzptr.l2g);
                 end
 
             end
@@ -835,15 +866,19 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             obj.evalBe;
 
             % getting mesh zones
-            mzsName = fieldnames(obj.m.mzs)';
+            mzsName = string(fieldnames(obj.m.mzs)');
 
             % save field data for core loss calculation
             for mzName = mzsName
 
-                mzptr = obj.m.mzs.(char(mzName));
+                mzptr = obj.m.mzs.(mzName);
                 if mzptr.props.isCoreLossActivated
                     mzptr.props.Bxg(end+1,:) = obj.results.Bxg(obj.m.ezi(:,mzptr.zi));
                     mzptr.props.Byg(end+1,:) = obj.results.Byg(obj.m.ezi(:,mzptr.zi));
+                end
+
+                if mzptr.props.isEddyZone
+                    mzptr.props.Az(:,end+1) = obj.results.A(mzptr.l2g);
                 end
 
             end
@@ -913,7 +948,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 % evaluation of B2 for each elements
                 obj.evalBe;
                 [obj.solverHistory.totalEnergy(end + 1),obj.solverHistory.totalConergy(end + 1)] = obj.evalTotalEnergyCoenergy;
-                Bk = sqrt(obj.results.Bxg.^2 + obj.results.Byg.^2);
+                Bk = obj.results.Bxg.^2 + obj.results.Byg.^2;
 
                 % calculate relative energy residual
                 if length(obj.solverHistory.totalEnergy)>2
@@ -923,19 +958,46 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
 
                 mzNames = fieldnames(obj.m.mzs);
 
-                % updating nu
+                %                 % updating nu
+                %                 for i = 1:obj.m.Nmzs
+                %                     mzptr = obj.m.mzs.(mzNames{i});
+                %
+                %                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
+                %                         obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
+                %                             ppval(obj.m.mts.(mzptr.material).vB, ...
+                %                             Bk(obj.m.ezi(:, mzptr.zi)));
+                %                     end
+                %
+                %                 end
+                %
+                %                 % updating dnudB2
+                %                 dnudB2 = zeros(1, xNgt);
+                %
+                %                 for i = 1:obj.m.Nmzs
+                %                     mzptr = obj.m.mzs.(mzNames{i});
+                %
+                %                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
+                %                         dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
+                %                             ppval(obj.m.mts.(mzptr.material).dvdB, ...
+                %                             Bk(obj.m.ezi(:, mzptr.zi))) ./ ...
+                %                             (2 * Bk(obj.m.ezi(:, mzptr.zi)));
+                %                     end
+                %
+                %                 end
+
+                % updating nu -> B2
                 for i = 1:obj.m.Nmzs
                     mzptr = obj.m.mzs.(mzNames{i});
 
                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
                         obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).vB, ...
+                            ppval(obj.m.mts.(mzptr.material).vB2, ...
                             Bk(obj.m.ezi(:, mzptr.zi)));
                     end
 
                 end
 
-                % updating dnudB2
+                % updating dnudB2 -> B2
                 dnudB2 = zeros(1, xNgt);
 
                 for i = 1:obj.m.Nmzs
@@ -943,9 +1005,8 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
 
                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
                         dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).dvdB, ...
-                            Bk(obj.m.ezi(:, mzptr.zi))) ./ ...
-                            (2 * Bk(obj.m.ezi(:, mzptr.zi)));
+                            ppval(obj.m.mts.(mzptr.material).dvdB2, ...
+                            Bk(obj.m.ezi(:, mzptr.zi)));
                     end
 
                 end
@@ -1068,6 +1129,10 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 if mzptr.props.isCoreLossActivated
                     mzptr.props.Bxg(end,:) = obj.results.Bxg(obj.m.ezi(:,mzptr.zi));
                     mzptr.props.Byg(end,:) = obj.results.Byg(obj.m.ezi(:,mzptr.zi));
+                end
+
+                if mzptr.props.isEddyZone
+                    mzptr.props.Az(:,end) = obj.results.A(mzptr.l2g);
                 end
 
             end

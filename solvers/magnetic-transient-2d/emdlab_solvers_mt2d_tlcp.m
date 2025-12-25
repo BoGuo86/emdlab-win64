@@ -470,6 +470,14 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
             obj.coils.(coilName).setInitialCurrent(value);
         end
 
+        function forcePeriodicCoilVoltages(obj)
+            for cName = string(fieldnames(obj.coils)')
+                cptr = obj.coils.(cName);
+                cptr.inducedVoltage(1) = cptr.inducedVoltage(end);
+                cptr.voltage(1) = cptr.voltage(end);
+            end
+        end
+
         % cage definition
         function cageName = checkCageExistence(obj, cageName)
 
@@ -629,6 +637,10 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
 
         end
 
+        function [ySum,y] = evalSolidLoss(obj)
+            [ySum,y] = emdlab_flib_calculateMECLM1(obj);
+        end
+
         % cage definition
         function movingRegionName = checkMovingRegionExistence(obj, movingRegionName)
 
@@ -726,6 +738,10 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
                 end
             end
 
+        end
+
+        function y = evalCoreLossModel1(obj, Kh, Ke)
+            y = emdlab_flib_calculateIronLossesModel1(obj, Kh, 1, 2, Ke);
         end
 
         %% Boundary Conditions
@@ -1103,9 +1119,9 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
                 else
 
                     % mesh zone energy
-                    mze = mzptr.getAreaOfElements' * interp1(mptr.be, mptr.we, sqrt(Bk2(eziptr)'));
-                    ye = ye + mze;
-                    yc = yc + obj.edata.MagneticReluctivity(eziptr) * (mzptr.getAreaOfElements .* Bk2(eziptr)') - mze;
+                    Bk = sqrt(Bk2(eziptr)');
+                    ye = ye + mzptr.getAreaOfElements' * ppval(mptr.weB, Bk);
+                    yc = yc + mzptr.getAreaOfElements' * ppval(mptr.wcH, ppval(mptr.HB, Bk));;
 
                 end
 
@@ -1765,6 +1781,10 @@ classdef emdlab_solvers_mt2d_tlcp < handle & matlab.mixin.Copyable
         function [Bx,By] = getMeshZoneBxgByg(obj, mzName)
             Bx = obj.results.Bxg(obj.m.ezi(:,obj.m.mzs.(mzName).zi));
             By = obj.results.Byg(obj.m.ezi(:,obj.m.mzs.(mzName).zi));
+        end
+
+        function Az = getMeshZoneAz(obj, mzName)
+            Az = obj.results.A(obj.m.mzs.(mzName).l2g);
         end
 
     end

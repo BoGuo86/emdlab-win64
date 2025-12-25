@@ -620,9 +620,9 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                 else
 
                     % mesh zone energy
-                    mze = mzptr.getAreaOfElements' * interp1(mptr.be, mptr.we, sqrt(Bk2(eziptr)'));
-                    ye = ye + mze;
-                    yc = yc + obj.edata.MagneticReluctivity(eziptr) * (mzptr.getAreaOfElements .* Bk2(eziptr)') - mze;
+                    Bk = sqrt(Bk2(eziptr)');
+                    ye = ye + mzptr.getAreaOfElements' * ppval(mptr.weB, Bk);
+                    yc = yc + mzptr.getAreaOfElements' * ppval(mptr.wcH, ppval(mptr.HB, Bk));
 
                 end
 
@@ -657,10 +657,13 @@ classdef emdlab_solvers_ms2d_tlcp < handle
                 else
 
                     % mesh zone energy
-                    mze = mzptr.getAreaOfElements' .* interp1(mptr.be, mptr.we, sqrt(Bk2(:,eziptr)), 'spline');
+                    Bk = sqrt(Bk2(:,eziptr));
+                    mze = mzptr.getAreaOfElements' .* ppval(mptr.weB, Bk);
                     mze = sum(sum(mze))/3;
                     ye = ye + mze;
-                    yc = yc + sum(sum(mzptr.getAreaOfElements' .* (obj.edata.MagneticReluctivity(:,eziptr) .* Bk2(:,eziptr))))/3 - mze;
+                    mzc = mzptr.getAreaOfElements' .* ppval(mptr.wcH, ppval(mptr.HB, Bk));
+                    mzc= sum(sum(mzc))/3;
+                    yc = yc + mzc;                  
 
                 end
 
@@ -1366,7 +1369,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             cb.FontName = 'Verdana';
             cb.FontSize = 12;
             cb.Label.String = 'Flux Density [tesla]';
-            clim([0,1.9]);
 
             axis off equal;
             zoom on;
@@ -1544,7 +1546,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             cb.FontName = 'Verdana';
             cb.FontSize = 12;
             cb.Label.String = 'Flux Density [tesla]';
-            clim([0,1.9]);
 
             % evaluation of contour lines
             if obj.m.isTL3
@@ -1608,7 +1609,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             cb.FontName = 'Verdana';
             cb.FontSize = 12;
             cb.Label.String = 'Flux Density [tesla]';
-            clim([0,1.9]);
 
             cRange = linspace(min(obj.results.A), max(obj.results.A), N+2);
             c = tmzpc_contour_tl3(obj.m.cl, obj.m.nodes, obj.results.A, cRange(2:end-1));
@@ -1664,7 +1664,6 @@ classdef emdlab_solvers_ms2d_tlcp < handle
             cb.FontName = 'Verdana';
             cb.FontSize = 12;
             cb.Label.String = 'Flux Density [tesla]';
-            clim([0,1.9]);
 
             axis off equal;
             zoom on;

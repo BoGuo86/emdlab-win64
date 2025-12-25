@@ -142,6 +142,7 @@ for i = 1:Nt
     te_mst(i) = s.evalTorqueByMST3(0,0,gv_ISD/2-gv_g/2,gv_g,1000);
 
 end
+s.forcePeriodicCoilVoltages
 % plot results
 s.plotCoilCurrents;
 s.plotCoilFluxLinkages;

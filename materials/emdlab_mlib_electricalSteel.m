@@ -6,6 +6,7 @@ classdef emdlab_mlib_electricalSteel < emdlab_phy_material & handle
         
         hb_curve (:,2) double;
         BH
+        HB
         dBdH
         vB
         vH
@@ -15,6 +16,8 @@ classdef emdlab_mlib_electricalSteel < emdlab_phy_material & handle
         be
         we
         wc
+        weB
+        wcH
         
     end
     
@@ -68,29 +71,46 @@ classdef emdlab_mlib_electricalSteel < emdlab_phy_material & handle
             b = obj.hb_curve(2:end,2);
 
             % smooth & extend HB curve
-            [h,b] = emdlab_flib_smooth_extend_hbcurve_exp(h, b, 100*h(end));
+%             [h,b] = emdlab_flib_smooth_extend_hbcurve_exp(h, b, 100*h(end));
             %[h,b] = emdlab_flib_smooth_extend_hbcurve_polyc(h, b, 10*h(end));
             %[h,b] = emdlab_flib_smooth_extend_hbcurve_arctan(h, b, 10*h(end));
 
             % evaluation of nu
             v = (h ./ b);
+            [b, v] = emdlab_extend_linear_to_air(b, v);
+
 %             [b, v] = extend_exponential(b, v, 1/4/pi/1e-7);
             %[b, v] = emdlab_flib_smooth_extend_bvcurve_arctan(b,v,1/4/pi/1e-7);
             %[b, v] = emdlab_flib_smooth_extend_bvcurve_exp(b,v,1/4/pi/1e-7);
             h = v .* b;
+            h = [0;h];
+            b = [0;b];
+            v = [v(1);v];
+
+            obj.vB2 = pchip(b.^2, v);
+            obj.dvdB2 = obj.vB2;
+            obj.dvdB2.coefs = obj.dvdB2.coefs * diag(3:-1:1, 1);
+
+            obj.weB = fnint(pchip(b, h)); % integrate                         
+            w0 = ppval(obj.weB,0); % enforce w(0) = 0
+            obj.weB.coefs(:,end) = obj.weB.coefs(:,end) - w0;
+
+            obj.wcH = fnint(pchip(h, b)); % integrate                         
+            w0 = ppval(obj.wcH,0); % enforce w(0) = 0
+            obj.wcH.coefs(:,end) = obj.wcH.coefs(:,end) - w0;
+
+%             % evaluation of BH, vB and dvdB
+%             h = [-flipud(h(2:end)); 0; h];
+%             b = [-flipud(b(2:end)); 0; b];
+%             v = [flipud(v(2:end)); v(1); v];
             
-            % evaluation of BH, vB and dvdB
-            h = [-flipud(h(2:end)); 0; h];
-            b = [-flipud(b(2:end)); 0; b];
-            v = [flipud(v(2:end)); v(1); v];
-            
-            obj.BH = pchip(b, h);
-            obj.dBdH = obj.BH;
+            obj.HB = pchip(b, h);
+            obj.dBdH = obj.HB;
             obj.dBdH.coefs = obj.dBdH.coefs * diag(3:-1:1, 1);
             
-            obj.vB = pchip(b, v);
-            obj.dvdB = obj.vB;
-            obj.dvdB.coefs = obj.dvdB.coefs * diag(3:-1:1, 1);
+%             obj.vB = pchip(b, v);
+%             obj.dvdB = obj.vB;
+%             obj.dvdB.coefs = obj.dvdB.coefs * diag(3:-1:1, 1);
             
 %             Ntmp = 10000;
 %             obj.be = linspace(0, 10, Ntmp)';
@@ -99,13 +119,16 @@ classdef emdlab_mlib_electricalSteel < emdlab_phy_material & handle
 %             vMid = ppval(obj.vB, beMid);
 %             obj.we = cumsum([0; vMid.*beMid*beStep]);
 
-            Ntmp = 1000;
-            obj.be = linspace(0, 10, Ntmp)';
-            nuPoints = ppval(obj.BH, obj.be);
-            obj.we = zeros(1,Ntmp);
-            for i = 2:Ntmp                
-                obj.we(i) = trapz(obj.be(1:i), nuPoints(1:i));
-            end
+%             Ntmp = 1000;
+%             obj.be = linspace(0, 10, Ntmp)';
+%             nuPoints = ppval(obj.BH, obj.be);
+%             obj.we = zeros(1,Ntmp);
+%             for i = 2:Ntmp                
+%                 obj.we(i) = trapz(obj.be(1:i), nuPoints(1:i));
+%             end
+
+           
+
             
         end
         

@@ -26,7 +26,7 @@ function [h_ext, b_ext] = emdlab_flib_smooth_extend_hbcurve_exp(h, b, h_final)
     mu_last = (b(end) - b(end-1)) / (h(end) - h(end-1));
 
     % smoothing length (maxwell-like)
-    DeltaH = 0.1 * Hsat;
+    DeltaH = 100 * Hsat;
 
     % interpolation inside measured range
     pp = pchip(h, b);
