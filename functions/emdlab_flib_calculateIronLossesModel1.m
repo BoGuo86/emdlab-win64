@@ -35,10 +35,17 @@ for mzName = string(fieldnames(obj.m.mzs)')
                 by_new(:,i) = bx(:,i)*yaxis(1) + by(:,i)*yaxis(2);
             end
 
+            theta = cumsum(theta);
+bx_new = bx.*cos(theta') + by.*sin(theta');
+by_new = -bx.*sin(theta') + by.*cos(theta');
+
             bx = bx_new;
             by = by_new;
 
         end
+
+        bx = bx-mean(bx,2);
+            by = by-mean(by,2);
 
         % get simulation time
         dt = obj.simTime(2);
