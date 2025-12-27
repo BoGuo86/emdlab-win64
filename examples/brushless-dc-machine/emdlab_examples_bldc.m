@@ -78,7 +78,7 @@ end
 s.setAzBC(m.getfbn, 0);
 
 % run solver
-s.solve;
+s.solve();
 
 % visualize solution
 s.gui;

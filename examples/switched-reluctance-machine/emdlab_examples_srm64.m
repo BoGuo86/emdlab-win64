@@ -136,8 +136,7 @@ s.setCoilCurrent('phaseA', 3.6);
 s.setAzBC(m.getfbn, 0);
 
 % run solver
-s.assignEdata(200)
-s.solve;
+s.solve(200);
 
 % visualize solution
 s.gui;

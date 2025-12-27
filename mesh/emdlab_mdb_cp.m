@@ -20,12 +20,18 @@ classdef emdlab_mdb_cp < handle
         % interface mesh zones: interface between static and moving regions
         imzs (1,1) struct;
 
+        % a vector to store material names
+        materialNames (1,:) string;
+
     end
 
     properties (Dependent = true)
 
         % number of mesh zones
         Nmzs (1,1) double {mustBeNonnegative, mustBeInteger};
+
+        % number of materials
+        Nmts (1,1) double {mustBeNonnegative, mustBeInteger};
 
     end
 
@@ -37,6 +43,12 @@ classdef emdlab_mdb_cp < handle
         function y = get.Nmzs(obj)
 
             y = numel(fieldnames(obj.mzs));
+
+        end
+
+        function y = get.Nmts(obj)
+
+            y = numel(fieldnames(obj.mts));
 
         end
 

@@ -1334,6 +1334,55 @@ classdef emdlab_solvers_ms2d_tlcp < handle
 
         end
 
+        function varargout = plotMU(obj, varargin)
+
+            if numel(varargin)
+                [f,ax] = emdlab_flib_fax(varargin{1});
+            else
+                [f,ax] = emdlab_flib_fax();
+            end
+
+            % amplitude of the B at mesh points
+            if numel(varargin)
+                if isa(varargin{1}, 'matlab.graphics.axis.Axes')
+                    ti = obj.m.getti(varargin{2:end});
+                else
+                    ti = obj.m.getti(varargin{:});
+                end
+            else
+                ti = obj.m.getti;
+            end
+            ampB = (1./obj.edata.MagneticReluctivity(:,ti))/(4*pi*1e-7);
+            ampB = repmat(ampB,3,1);
+%             ampB = sqrt(obj.results.Bxn(:,ti).^2 + obj.results.Byn(:,ti).^2);
+
+            % plot using patch function
+            xdata = obj.m.nodes(:,1);
+            ydata = obj.m.nodes(:,2);
+            patch('XData', xdata(obj.m.cl(ti, [1,2,3]))', 'YData', ydata(obj.m.cl(ti, [1,2,3]))', ...
+                'CData', ampB, 'FaceColor', 'interp', ...
+                'EdgeColor', 'none', 'parent', ax);
+
+            index = obj.m.edges(:, 3) - obj.m.edges(:, 4);
+            patch(ax, 'faces', obj.m.edges(logical(abs(index)), 1:2), 'vertices', obj.m.nodes, ...
+                'EdgeColor', [150,150,150]/255);
+            colormap(ax,jet(15));
+            cb = colorbar;
+            cb.FontName = 'Verdana';
+            cb.FontSize = 12;
+            cb.Label.String = 'Flux Density [tesla]';
+
+            axis off equal;
+            zoom on;
+            set(ax, 'clipping', 'off');
+
+            if nargout == 1, varargout{1} = f;
+            elseif nargout == 2, varargout{1} = f; varargout{2} = ax;
+            elseif nargout > 1, error('Too many output argument.');
+            end
+
+        end
+
         function varargout = plotBmag(obj, varargin)
 
             if numel(varargin)

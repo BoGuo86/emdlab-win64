@@ -93,8 +93,7 @@ end
 s.setAzBC(m.getfbn, 0);
 
 % run solver
-s.assignEdata(20);
-s.solve;
+s.solve(20);
 
 % visualize solution
 s.plotBrBtOnCircle(0, 0, gv_ISD/2-gv_g/2, 1000);

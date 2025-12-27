@@ -13,7 +13,7 @@ addpath(genpath('C:\emdlab-win64'));
 gv_ISD = 175;
 gv_OSD = 270;
 gv_Lstk = 190;
-gv_g = 0.635;
+gv_gap = 0.635;
 gv_Dsh = 70;
 gv_Ns = 48;
 gv_Nr = 36;
@@ -30,10 +30,10 @@ g = emdlab_g2d_db;
 
 % add geometry from library
 emdlab_g2d_lib_tc9(g,gv_ISD,gv_OSD,gv_Ns,4,3.5,5,1.5,1,15,0.5,0.5,'stator','sc','sap');
-emdlab_g2d_lib_tc10(g,gv_Dsh,gv_ISD-2*gv_g,gv_Nr,1,3.5,10,1.5,2,15,0.5,0.5,'rotor','rb','rap');
+emdlab_g2d_lib_tc10(g,gv_Dsh,gv_ISD-2*gv_gap,gv_Nr,1,3.5,10,1.5,2,15,0.5,0.5,'rotor','rb','rap');
 
 % setting the wireframe mesh by mesh size function
-f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2-gv_g,gv_OSD/2], [3,0.3,3]*2, r, 'linear','extrap');
+f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2-gv_gap,gv_OSD/2], [3,gv_gap/2,3]*2, r, 'linear','extrap');
 g.setMeshLengthByRadialFunction(f_mesh);
 
 % mesh generation
@@ -60,7 +60,7 @@ m.aux_cmxjcr('rb'+string(i),gv_Nr);
 end
 
 % add circular air gap
-m.aux_addCircularAirGap('ag',0,0,gv_ISD/2-gv_g,0,0,gv_ISD/2,2);
+m.aux_addCircularAirGap('ag',0,0,gv_ISD/2-gv_gap,0,0,gv_ISD/2,2);
 
 % getting an instance of solver object
 s = emdlab_solvers_ms2d_tl3_ihnl(m);
@@ -136,7 +136,6 @@ s.setCoilCurrent('phaseCC', -gv_Iph*1.41/2);
 s.setAzBC(m.getfbn, 0);
 
 % solve and plot results
-s.setSolverRelativeError(1e-8);
-s.solve
+s.solve;
 s.gui;
-s.plotBrBtOnCircle(0, 0, gv_ISD/2-gv_g/2, 1000);
+s.plotBrBtOnCircle(0, 0, gv_ISD/2-gv_gap/2, 1000);

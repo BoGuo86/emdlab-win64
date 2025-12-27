@@ -14,17 +14,22 @@ gv_Ns = 54;
 gv_Nc = 6;
 gv_p = 6;
 gv_Hc = -922100;
+
 % dependent variables
 alpha_p = 2*pi/gv_p;
 
-% generator geometry
+% define geometry data base
 g = emdlab_g2d_db;
 
-% mesh density function
-f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2,gv_OSD/2], [1.5,gv_g,2], r, 'linear', 'extrap');
+% add geometry from library
 emdlab_g2d_lib_tc9(g,gv_ISD,gv_OSD,gv_Ns,gv_Nc,2.8,1.8,1.5,0.8,15,0.3,0.3,'stator','sc','sap');
 emdlab_g2d_lib_rm_ipm1(g, gv_Dsh, gv_ISD-2*gv_g, gv_p, 0.25, [0.8,1], [1]*.8, [0.6,0.7], [1,1]*0.5, 0.6, 'rotor', 'magnet', 'rap');
-g.setMeshLengthByRadialFunction(f_mesh)
+
+% setting the wireframe mesh by mesh size function
+f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2,gv_OSD/2], [1.5,gv_g,2], r, 'linear', 'extrap');
+g.setMeshLengthByRadialFunction(f_mesh);
+
+% mesh generation
 m = g.generateMesh('mg0');
 
 % add materials
@@ -88,11 +93,12 @@ for i = 2:2:gv_p
     m.setMeshZoneColor(['magnets1',num2str(i)],255,70,70);
     m.setMeshZoneColor(['magnets2',num2str(i)],255,70,70);
 end
-% apply boundary conditions
+
+% apply boundary conditions: zero vector potential on all boundary nodes
 s.setAzBC(m.getfbn, 0);
+
 % solve and plot results
-s.assignEdata(20)
-s.solve;
+s.solve(20);
 g.showSketch;
 m.showg;
 m.showmzs;

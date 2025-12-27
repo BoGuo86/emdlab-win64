@@ -411,38 +411,38 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 K31, obj.mtcs.K32, K33];
             F = [F1;F2;F3];
 
-                % imposing boundary conditions on [K] and [F]
-                % dbcs
-                if obj.bcs.Nd
-                    F(obj.bcs.iD) = obj.bcs.vD;
-                    K(obj.bcs.iD, :) = sparse(1:obj.bcs.Ndbcs, obj.bcs.iD, ones(1, obj.bcs.Ndbcs), obj.bcs.Ndbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
-                end
+            % imposing boundary conditions on [K] and [F]
+            % dbcs
+            if obj.bcs.Nd
+                F(obj.bcs.iD) = obj.bcs.vD;
+                K(obj.bcs.iD, :) = sparse(1:obj.bcs.Ndbcs, obj.bcs.iD, ones(1, obj.bcs.Ndbcs), obj.bcs.Ndbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
+            end
 
-                % opbcs
-                if obj.bcs.Nop
-                    F(obj.bcs.mOP) = F(obj.bcs.mOP) - F(obj.bcs.sOP);
-                    F(obj.bcs.sOP) = 0;
-                    K(obj.bcs.mOP, :) = K(obj.bcs.mOP, :) - K(obj.bcs.sOP, :);
-                    K(obj.bcs.sOP, :) = sparse([1:obj.bcs.Nopbcs, 1:obj.bcs.Nopbcs], ...
-                        [obj.bcs.mOP; obj.bcs.sOP], ones(1, 2 * obj.bcs.Nopbcs), obj.bcs.Nopbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
-                end
+            % opbcs
+            if obj.bcs.Nop
+                F(obj.bcs.mOP) = F(obj.bcs.mOP) - F(obj.bcs.sOP);
+                F(obj.bcs.sOP) = 0;
+                K(obj.bcs.mOP, :) = K(obj.bcs.mOP, :) - K(obj.bcs.sOP, :);
+                K(obj.bcs.sOP, :) = sparse([1:obj.bcs.Nopbcs, 1:obj.bcs.Nopbcs], ...
+                    [obj.bcs.mOP; obj.bcs.sOP], ones(1, 2 * obj.bcs.Nopbcs), obj.bcs.Nopbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
+            end
 
-                % epbcs
-                if obj.bcs.Nep
-                    F(obj.bcs.mEP) = F(obj.bcs.mEP) + F(obj.bcs.sEP);
-                    F(obj.bcs.sEP) = 0;
-                    K(obj.bcs.mEP, :) = K(obj.bcs.mEP, :) + K(obj.bcs.sEP, :);
-                    K(obj.bcs.sEP, :) = sparse([1:obj.bcs.Nepbcs, 1:obj.bcs.Nepbcs], ...
-                        [obj.bcs.mEP; obj.bcs.sEP], [ones(1, obj.bcs.Nepbcs), -ones(1, obj.bcs.Nepbcs)], obj.bcs.Nepbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
-                end
+            % epbcs
+            if obj.bcs.Nep
+                F(obj.bcs.mEP) = F(obj.bcs.mEP) + F(obj.bcs.sEP);
+                F(obj.bcs.sEP) = 0;
+                K(obj.bcs.mEP, :) = K(obj.bcs.mEP, :) + K(obj.bcs.sEP, :);
+                K(obj.bcs.sEP, :) = sparse([1:obj.bcs.Nepbcs, 1:obj.bcs.Nepbcs], ...
+                    [obj.bcs.mEP; obj.bcs.sEP], [ones(1, obj.bcs.Nepbcs), -ones(1, obj.bcs.Nepbcs)], obj.bcs.Nepbcs, obj.m.Nn+obj.NcoilArms+obj.Ncoils);
+            end
 
-                disp('All boundary condition imposed.');
-                toc, disp('-------------------------------------------------------');
+            disp('All boundary condition imposed.');
+            toc, disp('-------------------------------------------------------');
 
-                % solving [K][U] = [F]
-                tic, disp('-------------------------------------------------------');
+            % solving [K][U] = [F]
+            tic, disp('-------------------------------------------------------');
 
-                solVector = full(K\F);
+            solVector = full(K\F);
             obj.results.A = solVector(1:obj.m.Nn);
             obj.results.VICoilArms = solVector(obj.m.Nn+1:obj.m.Nn+obj.NcoilArms);
             obj.results.ICoils = solVector(obj.m.Nn+obj.NcoilArms+1:obj.m.Nn+obj.NcoilArms+obj.Ncoils);
@@ -532,7 +532,11 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             obj.solverHistory.totalEnergy = [];
             obj.solverHistory.totalConergy = [];
 
-            alphaNR = 0.8;
+            % memory allocation for dnudB2
+            dnudB2 = zeros(1, xNgt);
+
+            % inintial value of alphaNR
+            alphaNR = 0.7;
 
             % loop for non-linearity
             fprintf('Iter|Error   |Residual|time\n');
@@ -552,57 +556,13 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                         obj.solverHistory.totalEnergy(end);
                 end
 
-                mzNames = fieldnames(obj.m.mzs);
+                % updating nu & dnudB2
+                for i = 1:obj.m.Nmts
+                    mtptr = obj.m.mts.(obj.m.materialNames(i));
 
-                %                 % updating nu
-                %                 for i = 1:obj.m.Nmzs
-                %                     mzptr = obj.m.mzs.(mzNames{i});
-                %
-                %                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                %                         obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-                %                             ppval(obj.m.mts.(mzptr.material).vB, ...
-                %                             Bk(obj.m.ezi(:, mzptr.zi)));
-                %                     end
-                %
-                %                 end
-                %
-                %                 % updating dnudB2
-                %                 dnudB2 = zeros(1, xNgt);
-                %
-                %                 for i = 1:obj.m.Nmzs
-                %                     mzptr = obj.m.mzs.(mzNames{i});
-                %
-                %                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                %                         dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
-                %                             ppval(obj.m.mts.(mzptr.material).dvdB, ...
-                %                             Bk(obj.m.ezi(:, mzptr.zi))) ./ ...
-                %                             (2 * Bk(obj.m.ezi(:, mzptr.zi)));
-                %                     end
-                %
-                %                 end
-
-                % updating nu -> B2
-                for i = 1:obj.m.Nmzs
-                    mzptr = obj.m.mzs.(mzNames{i});
-
-                    if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                        obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).vB2, ...
-                            Bk(obj.m.ezi(:, mzptr.zi)));
-                    end
-
-                end
-
-                % updating dnudB2 -> B2
-                dnudB2 = zeros(1, xNgt);
-
-                for i = 1:obj.m.Nmzs
-                    mzptr = obj.m.mzs.(mzNames{i});
-
-                    if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                        dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).dvdB2, ...
-                            Bk(obj.m.ezi(:, mzptr.zi)));
+                    if ~mtptr.MagneticPermeability.isLinear
+                        obj.edata.MagneticReluctivity(obj.m.emi(i,:)) = ppval(mtptr.vB2, Bk(obj.m.emi(i,:)));
+                        dnudB2(obj.m.emi(i,:)) = ppval(mtptr.dvdB2, Bk(obj.m.emi(i,:)));
                     end
 
                 end
@@ -685,10 +645,13 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 % go to next iteration
                 Iterations = Iterations + 1;
 
-                if alphaNR == 0.9
-                    alphaNR = 0.7 + 0.3*2*(rand-0.5);
-                else
-                    alphaNR = 0.9;
+                % update alphaNR
+                if length(obj.solverHistory.relativeError)>2
+                    if obj.solverHistory.relativeError(end) > 0.8*obj.solverHistory.relativeError(end-1)
+                        alphaNR = max((0.95-2e-2*rand)*alphaNR,0.5);
+                    else
+                        alphaNR = min((1.05+2e-2*rand)*alphaNR,0.9);
+                    end
                 end
 
             end
@@ -936,7 +899,11 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             obj.solverHistory.totalEnergy = [];
             obj.solverHistory.totalConergy = [];
 
-            alphaNR = 0.9;
+            % memory allocation for dnudB2
+            dnudB2 = zeros(1, xNgt);
+
+            % inintial value of alphaNR
+            alphaNR = 0.7;
 
             % loop for non-linearity
             fprintf('Iter|Error   |Residual|time\n');
@@ -956,57 +923,13 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                         obj.solverHistory.totalEnergy(end);
                 end
 
-                mzNames = fieldnames(obj.m.mzs);
+                % updating nu & dnudB2
+                for i = 1:obj.m.Nmts
+                    mtptr = obj.m.mts.(obj.m.materialNames(i));
 
-                %                 % updating nu
-                %                 for i = 1:obj.m.Nmzs
-                %                     mzptr = obj.m.mzs.(mzNames{i});
-                %
-                %                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                %                         obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-                %                             ppval(obj.m.mts.(mzptr.material).vB, ...
-                %                             Bk(obj.m.ezi(:, mzptr.zi)));
-                %                     end
-                %
-                %                 end
-                %
-                %                 % updating dnudB2
-                %                 dnudB2 = zeros(1, xNgt);
-                %
-                %                 for i = 1:obj.m.Nmzs
-                %                     mzptr = obj.m.mzs.(mzNames{i});
-                %
-                %                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                %                         dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
-                %                             ppval(obj.m.mts.(mzptr.material).dvdB, ...
-                %                             Bk(obj.m.ezi(:, mzptr.zi))) ./ ...
-                %                             (2 * Bk(obj.m.ezi(:, mzptr.zi)));
-                %                     end
-                %
-                %                 end
-
-                % updating nu -> B2
-                for i = 1:obj.m.Nmzs
-                    mzptr = obj.m.mzs.(mzNames{i});
-
-                    if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                        obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).vB2, ...
-                            Bk(obj.m.ezi(:, mzptr.zi)));
-                    end
-
-                end
-
-                % updating dnudB2 -> B2
-                dnudB2 = zeros(1, xNgt);
-
-                for i = 1:obj.m.Nmzs
-                    mzptr = obj.m.mzs.(mzNames{i});
-
-                    if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                        dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).dvdB2, ...
-                            Bk(obj.m.ezi(:, mzptr.zi)));
+                    if ~mtptr.MagneticPermeability.isLinear
+                        obj.edata.MagneticReluctivity(obj.m.emi(i,:)) = ppval(mtptr.vB2, Bk(obj.m.emi(i,:)));
+                        dnudB2(obj.m.emi(i,:)) = ppval(mtptr.dvdB2, Bk(obj.m.emi(i,:)));
                     end
 
                 end
@@ -1082,10 +1005,13 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 % go to next iteration
                 Iterations = Iterations + 1;
 
-                if alphaNR == 0.9
-                    alphaNR = 0.7 + 0.3*2*(rand-0.5);
-                else
-                    alphaNR = 0.9;
+                % update alphaNR
+                if length(obj.solverHistory.relativeError)>2
+                    if obj.solverHistory.relativeError(end) > 0.8*obj.solverHistory.relativeError(end-1)
+                        alphaNR = max((0.95-2e-2*rand)*alphaNR,0.5);
+                    else
+                        alphaNR = min((1.05+2e-2*rand)*alphaNR,0.9);
+                    end
                 end
 
             end

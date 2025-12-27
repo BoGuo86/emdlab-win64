@@ -69,8 +69,6 @@ s.setCoilCurrent('coil_1', at);
 s.setAzBC(m.getfbn, 0);
 
 % run solver
-s.setSolverRelativeError(1e-4);
-s.setSolverMaxIteration(50);
 s.solve;
 
 % visualize solution

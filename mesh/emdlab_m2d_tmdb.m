@@ -27,6 +27,9 @@ classdef emdlab_m2d_tmdb < handle & emdlab_g2d_constants & matlab.mixin.Copyable
 
         % element zone index
         ezi (:,:) logical;
+        
+        % elements material index
+        emi (:,:) logical;
 
         % auxiliary stored matricies
         mtcs (1,1) struct;
@@ -176,7 +179,7 @@ classdef emdlab_m2d_tmdb < handle & emdlab_g2d_constants & matlab.mixin.Copyable
             for i = 1:obj.Nmzs
                 obj.mzs.(mzNames{i}).l2g = ic(nindex + 1:nindex + ...
                     obj.mzs.(mzNames{i}).Nn);
-                nindex = nindex + obj.mzs.(mzNames{i}).Nn;
+                nindex = nindex + obj.mzs.(mzNames{i}).Nn;        
             end
 
             obj.setdata;
@@ -202,10 +205,19 @@ classdef emdlab_m2d_tmdb < handle & emdlab_g2d_constants & matlab.mixin.Copyable
         % evaluate element zone index
         function evalezi(obj)
 
+            % construct emi & ezi
+            meshZoneNames = string(fieldnames(obj.mzs)');
+            obj.materialNames = string(fieldnames(obj.mts)');
+            obj.emi = false(obj.Nmts, obj.Ne);
             obj.ezi = false(obj.Ne, obj.Nmzs);
 
             for i = 1:obj.Nmzs
-                obj.ezi(:, i) = obj.elements(:, 4) == i;
+                obj.ezi(:,i) = obj.elements(:,4) == i;
+                for j = 1:obj.Nmts
+                    if obj.mzs.(meshZoneNames(i)).material == obj.materialNames(j)
+                        obj.emi(j,obj.ezi(:,i)) = true;
+                    end
+                end
             end
 
         end

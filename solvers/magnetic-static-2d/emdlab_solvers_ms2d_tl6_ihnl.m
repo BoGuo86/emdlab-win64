@@ -29,9 +29,9 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             obj.m = m;
 
             % default settings for solver
-            obj.solverSettings.relativeError = 1e-8;
+            obj.solverSettings.relativeError = 1e-5;
             obj.solverSettings.maxIteration = 100;
-            obj.solverSettings.relativeEnergyResidual = 1e-2;
+            obj.solverSettings.relativeEnergyResidual = 1e-3;
 
             % set default properties of mzs
             mzNames = fieldnames(obj.m.mzs);
@@ -64,13 +64,13 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
         end
 
         function setSolverRelativeEnergyResidual(obj, relativeEnergyResidual)
-            
+
             if relativeEnergyResidual < 0
                 error('relativeEnergyResidual must be a real positive number.');
             end
-            
+
             obj.solverSettings.relativeEnergyResidual = relativeEnergyResidual;
-            
+
         end
 
         function setMonitor(obj, value)
@@ -162,14 +162,14 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
 
             % applying current of excitation matrices
             coilNames = fieldnames(obj.coils);
-            
+
             for i = 1:numel(coilNames)
-                
+
                 % get coil pointer
                 cptr = obj.coils.(coilNames{i});
 
                 for j = 1:cptr.NcoilArms
-                    
+
                     % get coil arm pointer
                     mzptr = obj.m.mzs.(cptr.coilArms(j));
 
@@ -177,9 +177,9 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
                     obj.edata.InternalCurrentDensity(:,obj.m.ezi(:, mzptr.zi)) = ...
                         mzptr.props.direction * mzptr.props.turns * cptr.current * obj.units.k_current ...
                         / (mzptr.getArea * obj.units.k_length^2);
-                    
+
                 end
-                
+
             end
 
             disp('Initialization of material and force data compeleted.')
@@ -191,10 +191,10 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
         end
 
         % solver core
-        function solve(obj)
+        function solve(obj, varargin)
 
             % prerequisties
-            obj.assignEdata;
+            obj.assignEdata(varargin{:});
 
             % updating boundary conditions
             obj.bcs.updateAll;
@@ -308,17 +308,17 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             obj.solverHistory.relativeError = [];
             obj.solverHistory.totalEnergy = [];
             obj.solverHistory.totalConergy = [];
-            
 
-            % updating dnudB2
+            % memory allocation for dnudB2
             dnudB2 = zeros(3, xNgt);
 
-            alphaNR = 0.9;
+            % inintial value of alphaNR
+            alphaNR = 0.55;
             obj.solverHistory.alphaNR = alphaNR;
 
             % loop for non-linearity
             fprintf('Iter|Error   |Residual|time\n');
-            while ((RelError > obj.solverSettings.relativeError) || (RelEResidual>obj.solverSettings.relativeEnergyResidual)) && (Iterations < obj.solverSettings.maxIteration) 
+            while ((RelError > obj.solverSettings.relativeError) || (RelEResidual>obj.solverSettings.relativeEnergyResidual)) && (Iterations < obj.solverSettings.maxIteration)
 
                 % starting loop time
                 loopTime = tic;
@@ -334,58 +334,14 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
                         obj.solverHistory.totalEnergy(end);
                 end
 
-%                 % updating nu
-%                 for i = 1:obj.m.Nmzs
-%                     mzptr = obj.m.mzs.(mzNames{i});
-% 
-%                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-%                         for j = 1:3
-%                             obj.edata.MagneticReluctivity(j,obj.m.ezi(:, mzptr.zi)) = ...
-%                                 ppval(obj.m.mts.(mzptr.material).vB, ...
-%                                 Bk(j,obj.m.ezi(:, mzptr.zi)));
-%                         end
-%                     end
-% 
-%                 end
-% 
-%                 % updating dnudB2
-%                 for i = 1:obj.m.Nmzs
-%                     mzptr = obj.m.mzs.(mzNames{i});
-% 
-%                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-%                         for j = 1:3
-%                             dnudB2(j,obj.m.ezi(:, mzptr.zi)) = ...
-%                                 ppval(obj.m.mts.(mzptr.material).dvdB, ...
-%                                 Bk(j,obj.m.ezi(:, mzptr.zi))) ./ ...
-%                                 (2 * Bk(j,obj.m.ezi(:, mzptr.zi)));
-%                         end
-%                     end
-% 
-%                 end
+                % updating nu & dnudB2
+                for i = 1:obj.m.Nmts
+                    mtptr = obj.m.mts.(obj.m.materialNames(i));
 
-% updating nu
-                for i = 1:obj.m.Nmzs
-                    mzptr = obj.m.mzs.(mzNames{i});
-
-                    if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
+                    if ~mtptr.MagneticPermeability.isLinear
                         for j = 1:3
-                            obj.edata.MagneticReluctivity(j,obj.m.ezi(:, mzptr.zi)) = ...
-                                ppval(obj.m.mts.(mzptr.material).vB2, ...
-                                Bk(j,obj.m.ezi(:, mzptr.zi)));
-                        end
-                    end
-
-                end
-
-                % updating dnudB2
-                for i = 1:obj.m.Nmzs
-                    mzptr = obj.m.mzs.(mzNames{i});
-
-                    if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                        for j = 1:3
-                            dnudB2(j,obj.m.ezi(:, mzptr.zi)) = ...
-                                ppval(obj.m.mts.(mzptr.material).dvdB2, ...
-                                Bk(j,obj.m.ezi(:, mzptr.zi)));
+                            obj.edata.MagneticReluctivity(j,obj.m.emi(i,:)) = ppval(mtptr.vB2, Bk(j,obj.m.emi(i,:)));
+                            dnudB2(j,obj.m.emi(i,:)) = ppval(mtptr.dvdB2, Bk(j,obj.m.emi(i,:)));
                         end
                     end
 
@@ -450,20 +406,14 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
                 % go to next iteration
                 Iterations = Iterations + 1;
 
-%                 if alphaNR == 0.9
-%                     alphaNR = 0.7 + 0.2*2*(rand-0.5);
-%                 else
-%                     alphaNR = 0.9;
-%                 end
-
+                % update alphaNR
                 if length(obj.solverHistory.relativeError)>2
                     if obj.solverHistory.relativeError(end) > 0.8*obj.solverHistory.relativeError(end-1)
-                        alphaNR = 0.4 + 0.2*rand;
+                        alphaNR = max((0.95-2e-2*rand)*alphaNR,0.35);
                     else
-                        alphaNR = 0.9;
+                        alphaNR = min((1.05+2e-2*rand)*alphaNR,0.75);
                     end
                 end
-
                 obj.solverHistory.alphaNR(end+1) = alphaNR;
 
             end
@@ -527,14 +477,14 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             end
 
         end
-        
+
         function varargout = plotEnergy(obj, varargin)
 
             [f,ax] = emdlab_flib_fax(varargin{:});
             title('emdlab -> ms2d_ihnl solver');
             plot(1:obj.solverHistory.iterations, ...
                 obj.solverHistory.totalEnergy, 'color', 'r', 'Linewidth', 1.2, ...
-                'marker', 's', 'MarkerEdgeColor', 'b', 'parent', ax);            
+                'marker', 's', 'MarkerEdgeColor', 'b', 'parent', ax);
             ylabel('Energy [J]')
             xlabel('Iteration Number')
             legend('Total Energy = ' + string(obj.solverHistory.totalEnergy(end)) + 'J', 'FontSize', 14)
@@ -555,7 +505,7 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             title(ax,'emdlab -> ms2d_ihnl solver');
             plot(1:obj.solverHistory.iterations, ...
                 obj.solverHistory.totalConergy, 'color', 'r', 'Linewidth', 1.2, ...
-                'marker', 's', 'MarkerEdgeColor', 'b', 'parent', ax);            
+                'marker', 's', 'MarkerEdgeColor', 'b', 'parent', ax);
             ylabel('Coenergy [J]')
             xlabel('Iteration Number')
             legend('Total Coenergy = ' + string(obj.solverHistory.totalConergy(end)) + 'J', 'FontSize', 14)
@@ -569,7 +519,7 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             end
 
         end
-        
+
         function varargout = plotEnergyResidual(obj, varargin)
 
             [f,ax] = emdlab_flib_fax(varargin{:});
@@ -591,7 +541,7 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
             end
 
         end
-        
+
         function gui(obj)
 
             f = gui@emdlab_solvers_ms2d_tlcp(obj);
@@ -631,7 +581,7 @@ classdef emdlab_solvers_ms2d_tl6_ihnl < handle & emdlab_solvers_ms2d_tlcp
                 'https://www.sciencedirect.com/science/article/pii/S2352711025004121'} , ...
                 'HorizontalAlignment', 'center', ...
                 'FontSize', 14, ...
-                'Max', 2); 
+                'Max', 2);
 
             set(f,'visible', 'on');
 

@@ -13,7 +13,7 @@ DeltaB = (nu0 - nu(end)) / slope;
 % extend moderately
 B_ext = [B;
          B(end) + DeltaB;
-         B(end) + 10*DeltaB];
+         B(end) + 1000*DeltaB];
 
 nu_ext = [nu;
           nu0;

@@ -51,8 +51,6 @@ s.setMagnetization('Magnet',Hc,[1,1]);
 s.setAzBC(m.getfbn, 0);
 
 % run solver
-s.setSolverRelativeError(1e-4);
-s.setSolverMaxIteration(50);
 s.solve;
 
 % visualize solution

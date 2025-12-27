@@ -91,9 +91,7 @@ s.setCoilVoltage('SecondaryCoil', 0);
 m.showmzs;
 s.setAzBC(m.getfbn, 0);
 
-% solve for 200ms, time step is 0.5ms
-figure;
-s.setMonitor(1);
+% solve for 100ms, time step is 1ms
 s.solve(100e-3,1e-3);
 
 s.plotCoilCurrents

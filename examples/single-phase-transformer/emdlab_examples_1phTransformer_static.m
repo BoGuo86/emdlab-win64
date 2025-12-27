@@ -89,8 +89,6 @@ s.setCoilCurrent('SecondaryCoil', gv_Is);
 s.setAzBC(m.getfbn, 0);
 
 % solve and plot results
-s.setSolverRelativeError(1e-4);
-s.setSolverMaxIteration(100);
-s.solve;
+s.solve(100);
 s.gui;
 

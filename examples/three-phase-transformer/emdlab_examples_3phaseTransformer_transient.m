@@ -1,7 +1,7 @@
 % example information:
 % transient analysis of a three-phase transformer
 % primary coils are connected to the current source
-% secondary coils are open circuit -> open circuit test
+% secondary coils are short circuit -> short circuit test
 
 % initialization
 clc;

@@ -21,7 +21,7 @@ gv_hs0 = 1.5;
 gv_tta = 15;
 gv_Dsh = 28;
 gv_dm = 3;
-gv_g = 1;
+gv_gap = 1;
 gv_Ntc = 3;
 gv_Is = 180;
 gv_rpm = 1500;
@@ -32,11 +32,11 @@ gv_Hc = -922100;
 g = emdlab_g2d_db;
 
 % mesh density function
-f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2-gv_dm-gv_g,gv_ISD/2,gv_OSD/2], [5,1,0.5,4], r, 'linear','extrap');
+f_mesh = @(r) interp1([gv_Dsh/2,gv_ISD/2-gv_dm-gv_gap,gv_ISD/2,gv_OSD/2], [5,1,0.5,4], r, 'linear','extrap');
 
 % add geometry from library
 emdlab_g2d_lib_tc1(g, gv_ISD, gv_OSD, gv_Ns, gv_wst, gv_dss, gv_bs0, gv_hs0, gv_tta, 'stator', 'sc', 'sap');
-emdlab_g2d_lib_rm_spm1(g, gv_Dsh, gv_ISD-2*gv_g, gv_p, gv_dm, gv_embrace, 'rotor', 'magnet', 'rap');
+emdlab_g2d_lib_rm_spm1(g, gv_Dsh, gv_ISD-2*gv_gap, gv_p, gv_dm, gv_embrace, 'rotor', 'magnet', 'rap');
 
 % setting the wireframe mesh by mesh size function
 g.setMeshLengthByRadialFunction(f_mesh);
@@ -60,7 +60,7 @@ m.aux_cmcr('sc',[cos(pi/gv_Ns),sin(pi/gv_Ns)],gv_Ns)
 m.aux_cmxjcr('magnet',gv_p)
 
 % add circular air gap
-m.aux_addCircularAirGapInterface('ag',0,0,gv_ISD/2-gv_g,0,0,gv_ISD/2,3);
+m.aux_addCircularAirGapInterface('ag',0,0,gv_ISD/2-gv_gap,0,0,gv_ISD/2,3);
 
 % getting an instance of solver object
 s = emdlab_solvers_mt2d_tl3_ihnlwm(m);
@@ -156,8 +156,8 @@ timeStep = stopTime/Nt;
 te = zeros(1,Nt+1);
 te_mst = zeros(1,Nt+1);
 s.solveForInitialConditions;
-te(1) = s.evalTorqueByArkkio('ag', gv_g);
-te_mst(1) = s.evalTorqueByMST(0,0,gv_ISD/2-gv_g/2,10000);
+te(1) = s.evalTorqueByArkkio('ag', gv_gap);
+te_mst(1) = s.evalTorqueByMST(0,0,gv_ISD/2-gv_gap/2,1000);
 
 for i = 1:Nt    
 
@@ -166,8 +166,8 @@ for i = 1:Nt
     s.solveForOneTimeStep(timeStep);
 
     % calculate torque
-    te(i+1) = s.evalTorqueByArkkio('ag', gv_g);
-    te_mst(i+1) = s.evalTorqueByMST3(0,0,gv_ISD/2-gv_g/2,gv_g);
+    te(i+1) = s.evalTorqueByArkkio('ag', gv_gap);
+    te_mst(i+1) = s.evalTorqueByMST3(0,0,gv_ISD/2-gv_gap/2,gv_gap,1000);
 
 end
 s.forcePeriodicCoilVoltages;

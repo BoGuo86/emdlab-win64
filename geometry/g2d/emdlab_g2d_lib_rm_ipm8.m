@@ -27,7 +27,6 @@ beta = beta * pi/180;
 % pole pitch angle
 alpha_p = 2*pi/poles;
 
-
 % origin point
 o = g.addPoint(0,0);
 
@@ -42,7 +41,7 @@ x2 = (y2-y1)/m + x1;
 y3 = y2;
 x3 = x2 + dm/cos(beta);
 
-[x4,y4] = emdlab_g2d_getRayCircleIntersection([x3,y3],[1,m],[0,0],OD/2-wtrib);
+[x4,y4] = g.getIntersectionRayCircle(x3,y3,1,m,0,0,OD/2-wtrib);
 
 e1 = g.addSegmentByCoordinates(x2,y2,x3,y3);
 

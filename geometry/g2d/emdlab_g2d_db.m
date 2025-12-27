@@ -30,7 +30,9 @@ classdef emdlab_g2d_db < handle
 
             % set python path
             p = pyenv;
-            obj.setPyPath(p.Executable);
+            if p.Executable ~= ""
+                obj.setPyPath(p.Executable);
+            end
 
         end
 

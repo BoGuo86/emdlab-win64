@@ -8,11 +8,6 @@ function mz = emdlab_m2d_mg3(f, v, f1, v1)
 
     emdlab_g2d_validateFV(f, v);
 
-    % evaluation of max length according to boundary edges
-    tmp = v(f(:, 2), :) - v(f(:, 1), :);
-    tmp = sqrt(sum(tmp.^2, 2));
-    maxLength = max(tmp);
-
     % setting aspect ratio
     aspectRatio = 2;
 
@@ -46,7 +41,7 @@ function mz = emdlab_m2d_mg3(f, v, f1, v1)
 
         vv = [mz.nodes; tmp];
         dt = delaunayTriangulation(vv, ff);
-        mz = emdlab_m2d_tmz(dt.ConnectivityList(ext_dpoly2d(dt.incenter, f1, v1) <- 1e-6, :), dt.Points);
+        mz = emdlab_m2d_tmz(dt.ConnectivityList(ext_dpoly2d(dt.incenter, f1, v1) <-1e-6, :), dt.Points);
         mz.moveNodes;
 
         % next iteration

@@ -54,13 +54,13 @@ classdef emdlab_solvers_ms2d_tl3_ihnl < handle & emdlab_solvers_ms2d_tlcp
         end
 
         function setSolverRelativeEnergyResidual(obj, relativeEnergyResidual)
-            
+
             if relativeEnergyResidual < 0
                 error('relativeEnergyResidual must be a real positive number.');
             end
-            
+
             obj.solverSettings.relativeEnergyResidual = relativeEnergyResidual;
-            
+
         end
 
         function setMonitor(obj, value)
@@ -183,16 +183,13 @@ classdef emdlab_solvers_ms2d_tl3_ihnl < handle & emdlab_solvers_ms2d_tlcp
         end
 
         % solver core
-        function solve(obj)
+        function solve(obj, varargin)
 
             % prerequisties
-            obj.assignEdata;
+            obj.assignEdata(varargin{:});
 
             % updating boundary conditions
             obj.bcs.updateAll;
-
-            % getting mesh zone names
-            mzNames = fieldnames(obj.m.mzs);
 
             % Construction of [K] and [F]
             tic, disp('-------------------------------------------------------');
@@ -303,11 +300,15 @@ classdef emdlab_solvers_ms2d_tl3_ihnl < handle & emdlab_solvers_ms2d_tlcp
             obj.solverHistory.totalEnergy = [];
             obj.solverHistory.totalConergy = [];
 
-            alphaNR = 0.9;
+            % memory allocation for dnudB2
+            dnudB2 = zeros(1, xNgt);
+
+            % inintial value of alphaNR
+            alphaNR = 0.7;
 
             % loop for non-linearity
             fprintf('Iter|Error   |Residual|time\n');
-            while ((RelError > obj.solverSettings.relativeError) || (RelEResidual>obj.solverSettings.relativeEnergyResidual)) && (Iterations < obj.solverSettings.maxIteration) 
+            while ((RelError > obj.solverSettings.relativeError) || (RelEResidual>obj.solverSettings.relativeEnergyResidual)) && (Iterations < obj.solverSettings.maxIteration)
 
                 % starting loop time
                 loopTime = tic;
@@ -323,55 +324,13 @@ classdef emdlab_solvers_ms2d_tl3_ihnl < handle & emdlab_solvers_ms2d_tlcp
                         obj.solverHistory.totalEnergy(end);
                 end
 
-%                 % updating nu
-%                 for i = 1:obj.m.Nmzs
-%                     mzptr = obj.m.mzs.(mzNames{i});
-% 
-%                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-%                         obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-%                             ppval(obj.m.mts.(mzptr.material).vB, ...
-%                             Bk(obj.m.ezi(:, mzptr.zi)));
-%                     end
-% 
-%                 end
-% 
-%                 % updating dnudB2
-%                 dnudB2 = zeros(1, xNgt);
-% 
-%                 for i = 1:obj.m.Nmzs
-%                     mzptr = obj.m.mzs.(mzNames{i});
-% 
-%                     if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-%                         dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
-%                             ppval(obj.m.mts.(mzptr.material).dvdB, ...
-%                             Bk(obj.m.ezi(:, mzptr.zi))) ./ ...
-%                             (2 * Bk(obj.m.ezi(:, mzptr.zi)));
-%                     end
-% 
-%                 end
+                % updating nu & dnudB2
+                for i = 1:obj.m.Nmts
+                    mtptr = obj.m.mts.(obj.m.materialNames(i));
 
-                % updating nu -> B2
-                for i = 1:obj.m.Nmzs
-                    mzptr = obj.m.mzs.(mzNames{i});
-
-                    if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                        obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).vB2, ...
-                            Bk(obj.m.ezi(:, mzptr.zi)));
-                    end
-
-                end
-
-                % updating dnudB2 -> B2
-                dnudB2 = zeros(1, xNgt);
-
-                for i = 1:obj.m.Nmzs
-                    mzptr = obj.m.mzs.(mzNames{i});
-
-                    if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                        dnudB2(obj.m.ezi(:, mzptr.zi)) = ...
-                            ppval(obj.m.mts.(mzptr.material).dvdB2, ...
-                            Bk(obj.m.ezi(:, mzptr.zi)));
+                    if ~mtptr.MagneticPermeability.isLinear
+                        obj.edata.MagneticReluctivity(obj.m.emi(i,:)) = ppval(mtptr.vB2, Bk(obj.m.emi(i,:)));
+                        dnudB2(obj.m.emi(i,:)) = ppval(mtptr.dvdB2, Bk(obj.m.emi(i,:)));
                     end
 
                 end
@@ -434,17 +393,12 @@ classdef emdlab_solvers_ms2d_tl3_ihnl < handle & emdlab_solvers_ms2d_tlcp
                 % go to next iteration
                 Iterations = Iterations + 1;
 
-%                 if alphaNR == 0.9
-%                     alphaNR = 0.7 + 0.3*2*(rand-0.5);
-%                 else
-%                     alphaNR = 0.9;
-%                 end
-
+                % update alphaNR
                 if length(obj.solverHistory.relativeError)>2
                     if obj.solverHistory.relativeError(end) > 0.8*obj.solverHistory.relativeError(end-1)
-                        alphaNR = 0.4 + 0.2*rand;
+                        alphaNR = max((0.95-2e-2*rand)*alphaNR,0.5);
                     else
-                        alphaNR = 0.9;
+                        alphaNR = min((1.05+2e-2*rand)*alphaNR+2e-3*rand,0.9);
                     end
                 end
 
@@ -465,14 +419,12 @@ classdef emdlab_solvers_ms2d_tl3_ihnl < handle & emdlab_solvers_ms2d_tlcp
             % update magnetic reluctivity
             Bk = obj.results.Bxg.^2 + obj.results.Byg.^2;
 
-            % updating nu
-            for i = 1:obj.m.Nmzs
-                mzptr = obj.m.mzs.(mzNames{i});
+            % updating nu -> B2
+            for i = 1:obj.m.Nmts
+                mtptr = obj.m.mts.(obj.m.materialNames(i));
 
-                if ~obj.m.mts.(mzptr.material).MagneticPermeability.isLinear
-                    obj.edata.MagneticReluctivity(obj.m.ezi(:, mzptr.zi)) = ...
-                        ppval(obj.m.mts.(mzptr.material).vB2, ...
-                        Bk(obj.m.ezi(:, mzptr.zi)));
+                if ~mtptr.MagneticPermeability.isLinear
+                    obj.edata.MagneticReluctivity(obj.m.emi(i,:)) = ppval(mtptr.vB2, Bk(obj.m.emi(i,:)));
                 end
 
             end
@@ -611,7 +563,7 @@ classdef emdlab_solvers_ms2d_tl3_ihnl < handle & emdlab_solvers_ms2d_tlcp
                 'https://www.sciencedirect.com/science/article/pii/S2352711025004121'} , ...
                 'HorizontalAlignment', 'center', ...
                 'FontSize', 14, ...
-                'Max', 2); 
+                'Max', 2);
 
             set(f,'visible', 'on');
 

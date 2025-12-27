@@ -121,7 +121,7 @@ for i = 1:Nt
     s.setCoilCurrent('phaseB', ib_srf(alpha_Is_rrf(i)));
     s.setCoilCurrent('phaseC', ic_srf(alpha_Is_rrf(i)));
     % run solver
-    s.solve;
+    s.solve(100);
     % calculate torque
     te(i) = 4*s.evalTorqueByArkkio('ag', gv_g);
     te_mst(i) = 4*s.evalTorqueByMST3(0,0,gv_ISD/2-gv_g/2,gv_g);

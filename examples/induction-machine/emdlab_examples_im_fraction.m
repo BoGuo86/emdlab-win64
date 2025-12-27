@@ -101,7 +101,6 @@ s.setAzBC(setdiff(m.getfbn,[km,ks]),0);
 s.setEvenPeriodicBC(km,ks);
 
 % run solver
-s.setSolverRelativeError(1e-4);
 s.solve;
 
 % visualize solution

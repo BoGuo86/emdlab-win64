@@ -140,9 +140,7 @@ fb_index = setdiff(m.getfbn,index);
 s.setOddPeriodicBC(km,ks);
 
 % run solver
-s.setSolverRelativeError(1e-4);
-s.setSolverMaxIteration(50);
-s.solve;
+s.solve(200);
 
 % visualize solution
 s.gui;
