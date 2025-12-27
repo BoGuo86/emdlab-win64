@@ -670,7 +670,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
             obj.evalBn;
             obj.evalHn;
 
-            % save field data for core loss calculation
+            % save field data for core loss calculation & update magnetic reluctivities
             for mzName = mzsName
 
                 mzptr = obj.m.mzs.(char(mzName));
@@ -683,6 +683,8 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                     mzptr.props.Az(:,end) = obj.results.A(mzptr.l2g);
                 end
 
+                mzptr.props.MagneticReluctivity = obj.edata.MagneticReluctivity(obj.m.ezi(:,mzptr.zi));
+
             end
 
             % change states
@@ -693,10 +695,9 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
         % solver core
         function obj = solveForOneTimeStep(obj, DeltaTime)
 
+            % prerequisties
             obj.solveForInitialConditions;
             obj.simTime(end+1) = obj.simTime(end) + DeltaTime;
-
-            % prerequisties
             obj.assignEdata;
 
             % updating boundary conditions
@@ -1048,7 +1049,7 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 cptr.voltage(end) = cptr.Rdc * cptr.current(end) + cptr.inducedVoltage(end);
             end
 
-            % save field data for core loss calculation
+            % save field data for core loss calculation & update magnetic reluctivities
             for mzName = mzsName
 
                 mzptr = obj.m.mzs.(char(mzName));
@@ -1060,6 +1061,8 @@ classdef emdlab_solvers_mt2d_tl3_ihnlwm < handle & emdlab_solvers_mt2d_tlcp & ma
                 if mzptr.props.isEddyZone
                     mzptr.props.Az(:,end) = obj.results.A(mzptr.l2g);
                 end
+
+                mzptr.props.MagneticReluctivity = obj.edata.MagneticReluctivity(obj.m.ezi(:,mzptr.zi));
 
             end
 
